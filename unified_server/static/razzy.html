@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Razzy Chat</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 24px; background: #101418; color: #f4f7fb; }
+    .card { background: #182029; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+    input, select, textarea, button { width: 100%; padding: 10px; margin-top: 8px; border-radius: 8px; border: 1px solid #314050; }
+    button { background: #5b8cff; color: white; font-weight: bold; cursor: pointer; }
+    .messages { white-space: pre-wrap; line-height: 1.5; }
+    .meta { color: #9bb0c7; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>RAZZY 🦉</h1>
+    <div class="meta">Personal chatbot interface for Gio</div>
+  </div>
+
+  <div class="card">
+    <label>Provider</label>
+    <select id="provider">
+      <option value="ollama">ollama</option>
+      <option value="openai">openai</option>
+      <option value="anthropic">anthropic</option>
+    </select>
+
+    <label>Model</label>
+    <input id="model" value="lfm2.5-thinking:latest">
+
+    <label>Message</label>
+    <textarea id="message" rows="4" placeholder="Talk to Razzy..."></textarea>
+
+    <button onclick="sendMessage()">Send</button>
+  </div>
+
+  <div class="card messages" id="output">No messages yet.</div>
+
+  <script>
+    let conversationId = null;
+    const apiKey = 'change-me';
+
+    async function ensureConversation() {
+      if (conversationId) return conversationId;
+      const res = await fetch('/api/razzy/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+        body: JSON.stringify({ title: 'Razzy Web Chat' })
+      });
+      const data = await res.json();
+      conversationId = data.conversation_id;
+      return conversationId;
+    }
+
+    async function sendMessage() {
+      const message = document.getElementById('message').value;
+      const provider = document.getElementById('provider').value;
+      const model = document.getElementById('model').value;
+      const output = document.getElementById('output');
+      const cid = await ensureConversation();
+
+      const res = await fetch('/api/razzy/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+        body: JSON.stringify({ conversation_id: cid, message, provider, model })
+      });
+      const data = await res.json();
+      output.textContent = 'Razzy: ' + (data.message?.content || JSON.stringify(data, null, 2));
+    }
+  </script>
+</body>
+</html>
