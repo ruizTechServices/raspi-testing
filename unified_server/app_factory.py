@@ -78,6 +78,11 @@ def create_app(service: ChatService | None = None, razzy_service: RazzyService |
             return jsonify({"error": str(exc)}), 400
         except Exception as exc:
             return jsonify({"error": str(exc)}), 502
+    
+    @app.get("/")
+    def index_ui():
+        html_path = Path(__file__).resolve().parent / "static" / "index.html"
+        return send_file(html_path)
 
     @app.get("/razzy")
     def razzy_ui():

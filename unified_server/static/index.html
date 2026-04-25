@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Raspi Testing UI</title>
+  <link rel="stylesheet" href="/static/app.css" />
+  <script defer src="/static/app.js"></script>
+</head>
+<body>
+  <main class="page-shell">
+    <section class="panel">
+      <h1>Raspi Testing UI</h1>
+      <p class="subtext">Local frontend for your Flask backend.</p>
+
+      <div class="row">
+        <div class="field">
+          <label for="providerSelect">Provider</label>
+          <select id="providerSelect"></select>
+        </div>
+
+        <div class="field">
+          <label for="modelInput">Model</label>
+          <input id="modelInput" type="text" value="mistral:latest" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="messageInput">Message</label>
+        <textarea id="messageInput">Say hello in one sentence.</textarea>
+      </div>
+
+      <div class="button-row">
+        <button id="sendBtn" type="button">Send</button>
+        <button id="clearBtn" type="button">Clear</button>
+      </div>
+
+      <div class="meta">
+        <div>Status: <span id="statusText">Idle</span></div>
+        <div>Conversation ID: <span id="conversationIdText">Not started yet</span></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Chat</h2>
+      <div id="transcript" class="transcript">
+        <div class="empty-state">No messages yet.</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Debug</h2>
+      <pre id="debugOutput">Waiting...</pre>
+    </section>
+  </main>
+</body>
+</html>
