@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gio Chat</title>
+  <link rel="stylesheet" href="/static/app.css?v=20260429f" />
+  <link rel="stylesheet" href="/static/gio.css?v=20260429f" />
+  <script defer src="/static/gio.js?v=20260429g"></script>
+</head>
+<body>
+  <main class="page-shell gio-layout">
+    <nav class="top-nav" aria-label="Server pages">
+      <div class="top-nav-bar">
+        <a href="/" class="top-nav-brand">Razzy</a>
+        <button id="navMenuBtn" class="nav-toggle" type="button" aria-expanded="false" aria-controls="topNavLinks" aria-label="Toggle navigation menu">
+          <span class="nav-toggle-icon"></span>
+          <span class="nav-toggle-label">Menu</span>
+        </button>
+      </div>
+      <div id="topNavLinks" class="top-nav-links">
+        <a href="/" class="nav-link">Home</a>
+        <a href="/console" class="nav-link">Ollama Chatbot</a>
+        <a href="/razzy" class="nav-link">Razzy</a>
+        <a href="/gio" class="nav-link active">Gio Chat</a>
+        <a href="/gio/dreams" class="nav-link">Dream Mode</a>
+      </div>
+    </nav>
+
+    <button id="sidebarToggleBtn" class="mobile-sidebar-toggle" type="button" aria-expanded="false" aria-controls="gioSidebarPanel">
+      ☰ Chats
+    </button>
+
+    <div id="mobileOverlay" class="mobile-overlay" hidden></div>
+
+    <aside id="gioSidebarPanel" class="panel sidebar-panel">
+      <div class="sidebar-header">
+        <h2>Your Chats</h2>
+        <div class="sidebar-actions">
+          <button id="renameChatBtn" type="button">Rename</button>
+          <button id="deleteChatBtn" type="button">Delete</button>
+          <button id="dreamChatBtn" type="button">Dream</button>
+          <button id="newChatBtn" type="button">New Chat</button>
+        </div>
+      </div>
+      <div id="conversationList" class="conversation-list">
+        <div class="empty-state">Loading conversations...</div>
+      </div>
+    </aside>
+
+    <section class="panel chat-panel">
+      <div class="chat-header">
+        <div>
+          <div class="chat-title-row">
+            <h1>Gio Chat</h1>
+            <button id="chatSidebarBtn" class="chat-sidebar-btn" type="button" aria-expanded="false" aria-controls="gioSidebarPanel">
+              Chats
+            </button>
+          </div>
+          <div class="meta" id="chatMeta">Persistent Supabase-backed chat.</div>
+        </div>
+        <div class="chat-controls">
+          <div class="field compact-field">
+            <label for="gioModelSelect">Model</label>
+            <select id="gioModelSelect"></select>
+          </div>
+        </div>
+      </div>
+
+      <div id="gioTranscript" class="transcript gio-transcript">
+        <div class="empty-state">Start a new chat to begin.</div>
+      </div>
+
+      <div class="composer">
+        <textarea id="gioMessageInput" placeholder="Message your chatbot..." rows="4"></textarea>
+        <div class="composer-row">
+          <div id="gioStatusText" class="meta">Idle</div>
+          <div class="composer-actions">
+            <button id="gioStopBtn" type="button" disabled>Stop</button>
+            <button id="gioSendBtn" type="button">Send</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

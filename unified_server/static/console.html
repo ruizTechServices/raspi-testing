@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ollama Chatbot</title>
+  <link rel="stylesheet" href="/static/app.css?v=20260506-console2" />
+  <link rel="stylesheet" href="/static/console.css?v=20260506-console2" />
+  <script defer src="/static/nav.js"></script>
+  <script defer src="/static/app.js?v=20260506-console2"></script>
+</head>
+<body>
+  <main class="page-shell console-layout">
+    <nav class="top-nav" aria-label="Server pages">
+      <div class="top-nav-bar">
+        <a href="/" class="top-nav-brand">Razzy</a>
+        <button id="navMenuBtn" class="nav-toggle" type="button" aria-expanded="false" aria-controls="topNavLinks" aria-label="Toggle navigation menu">
+          <span class="nav-toggle-icon"></span>
+          <span class="nav-toggle-label">Menu</span>
+        </button>
+      </div>
+      <div id="topNavLinks" class="top-nav-links">
+        <a href="/" class="nav-link">Home</a>
+        <a href="/console" class="nav-link active">Ollama Chatbot</a>
+        <a href="/razzy" class="nav-link">Razzy</a>
+        <a href="/gio" class="nav-link">Gio Chat</a>
+        <a href="/gio/dreams" class="nav-link">Dream Mode</a>
+      </div>
+    </nav>
+
+    <button id="consoleSidebarToggleBtn" class="mobile-sidebar-toggle" type="button" aria-expanded="false" aria-controls="consoleSidebarPanel">
+      ☰ History
+    </button>
+    <div id="consoleMobileOverlay" class="mobile-overlay" hidden></div>
+
+    <aside id="consoleSidebarPanel" class="panel console-sidebar-panel">
+      <div class="console-sidebar-header">
+        <div>
+          <h2>History</h2>
+          <div class="meta">Server-first SQLite chat history.</div>
+        </div>
+        <div class="console-sidebar-actions">
+          <button id="newChatBtn" type="button">New Chat</button>
+          <button id="renameChatBtn" type="button">Rename</button>
+          <button id="deleteChatBtn" type="button">Delete</button>
+        </div>
+      </div>
+      <div id="conversationList" class="conversation-list">
+        <div class="empty-state">Loading conversations...</div>
+      </div>
+    </aside>
+
+    <section class="panel console-chat-panel">
+      <div class="console-chat-header">
+        <div>
+          <div class="console-title-row">
+            <h1>Ollama Chatbot</h1>
+            <button id="consoleChatSidebarBtn" class="chat-sidebar-btn" type="button" aria-expanded="false" aria-controls="consoleSidebarPanel">
+              History
+            </button>
+          </div>
+          <p class="subtext console-subtext">Direct provider testing with real persisted history. Leaner than Gio Chat, but backed by the same server-first discipline.</p>
+        </div>
+        <div class="console-chat-controls">
+          <div class="field compact-field">
+            <label for="providerSelect">Provider</label>
+            <select id="providerSelect"></select>
+          </div>
+          <div class="field compact-field">
+            <label for="modelSelect">Model</label>
+            <select id="modelSelect"></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="console-chat-meta meta">
+        <div>Status: <span id="statusText">Idle</span></div>
+        <div>Conversation ID: <span id="conversationIdText">Not started yet</span></div>
+      </div>
+
+      <div id="transcript" class="transcript console-transcript">
+        <div class="empty-state">Start a new chat to begin.</div>
+      </div>
+
+      <div class="console-composer">
+        <div class="field console-composer-field">
+          <label for="messageInput">Message</label>
+          <textarea id="messageInput" placeholder="Ask the selected provider something real."></textarea>
+        </div>
+        <div class="console-composer-row">
+          <div class="meta">This console reflects backend state. It does not fake local-only history.</div>
+          <div class="console-composer-actions">
+            <button id="clearBtn" type="button">Clear View</button>
+            <button id="sendBtn" type="button">Send</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <details class="panel console-debug-panel">
+      <summary>Debug</summary>
+      <pre id="debugOutput">Waiting...</pre>
+    </details>
+  </main>
+</body>
+</html>

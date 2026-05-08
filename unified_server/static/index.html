@@ -3,54 +3,139 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Raspi Testing UI</title>
-  <link rel="stylesheet" href="/static/app.css" />
-  <script defer src="/static/app.js"></script>
+  <title>Razzy Command Center</title>
+  <link rel="stylesheet" href="/static/app.css?v=20260505-dashboard2" />
+  <script defer src="/static/nav.js"></script>
+  <script defer src="/static/dashboard.js?v=20260505-dashboard2"></script>
 </head>
 <body>
-  <main class="page-shell">
-    <section class="panel">
-      <h1>Raspi Testing UI</h1>
-      <p class="subtext">Local frontend for your Flask backend.</p>
+  <main class="page-shell dashboard-shell dashboard-shell-refined">
+    <nav class="top-nav" aria-label="Server pages">
+      <div class="top-nav-bar">
+        <a href="/" class="top-nav-brand">Razzy</a>
+        <button id="navMenuBtn" class="nav-toggle" type="button" aria-expanded="false" aria-controls="topNavLinks" aria-label="Toggle navigation menu">
+          <span class="nav-toggle-icon"></span>
+          <span class="nav-toggle-label">Menu</span>
+        </button>
+      </div>
+      <div id="topNavLinks" class="top-nav-links">
+        <a href="/" class="nav-link active">Home</a>
+        <a href="/console" class="nav-link">Ollama Chatbot</a>
+        <a href="/razzy" class="nav-link">Razzy</a>
+        <a href="/gio" class="nav-link">Gio Chat</a>
+        <a href="/gio/dreams" class="nav-link">Dream Mode</a>
+      </div>
+    </nav>
 
-      <div class="row">
-        <div class="field">
-          <label for="providerSelect">Provider</label>
-          <select id="providerSelect"></select>
+    <section class="panel dashboard-hero dashboard-hero-refined">
+      <div class="dashboard-hero-copy">
+        <div class="dashboard-eyebrow" id="dashboardGreeting">Good evening, Gio.</div>
+        <h1>Razzy Command Center</h1>
+        <p class="dashboard-subtitle">Your local AI command hub. Clear status, fewer boxes, calmer surfaces.</p>
+        <div class="dashboard-chip-row">
+          <div class="dashboard-chip">Localhost</div>
+          <div class="dashboard-chip">Pi 5 (8GB)</div>
+          <div class="dashboard-chip" id="dashboardClock">--:--</div>
         </div>
-
-        <div class="field">
-          <label for="modelInput">Model</label>
-          <input id="modelInput" type="text" value="mistral:latest" />
+        <div class="dashboard-inline-actions">
+          <button id="dashboardActionRefresh" class="dashboard-inline-button" type="button">Refresh</button>
+          <button id="dashboardActionStartOllama" class="dashboard-inline-button" type="button">Start Ollama</button>
+          <button id="dashboardActionStopOllama" class="dashboard-inline-button" type="button">Stop Ollama</button>
+          <a href="/gio" class="dashboard-inline-link">Open Gio Chat</a>
         </div>
+        <div class="dashboard-muted" id="dashboardActionStatus">Idle.</div>
       </div>
-
-      <div class="field">
-        <label for="messageInput">Message</label>
-        <textarea id="messageInput">Say hello in one sentence.</textarea>
-      </div>
-
-      <div class="button-row">
-        <button id="sendBtn" type="button">Send</button>
-        <button id="clearBtn" type="button">Clear</button>
-      </div>
-
-      <div class="meta">
-        <div>Status: <span id="statusText">Idle</span></div>
-        <div>Conversation ID: <span id="conversationIdText">Not started yet</span></div>
+      <div class="dashboard-hero-side">
+        <div class="dashboard-quote-card">
+          <div class="dashboard-quote-mark">“</div>
+          <div>Build in public.</div>
+          <div>Ship in private.</div>
+          <div>Automate everything.</div>
+          <div class="dashboard-quote-author">Gio</div>
+        </div>
+        <div class="dashboard-logo-card" aria-hidden="true">R</div>
       </div>
     </section>
 
-    <section class="panel">
-      <h2>Chat</h2>
-      <div id="transcript" class="transcript">
-        <div class="empty-state">No messages yet.</div>
-      </div>
+    <section class="dashboard-main-grid">
+      <article class="panel dashboard-overview-card">
+        <div class="dashboard-card-header">
+          <div>
+            <div class="dashboard-card-title">System Overview</div>
+            <div class="dashboard-card-subtitle">One cohesive view instead of a pile of separate little status boxes.</div>
+          </div>
+          <button id="dashboardRefreshBtn" class="dashboard-inline-action" type="button">Refresh</button>
+        </div>
+
+        <div class="dashboard-overview-grid">
+          <section class="dashboard-overview-section dashboard-overview-thermal" id="dashboardPiCard">
+            <div class="dashboard-section-label-row">
+              <div class="dashboard-section-label">Raspberry Pi 5</div>
+              <div class="dashboard-status-pill ok" id="dashboardPiState">Checking</div>
+            </div>
+            <div class="dashboard-metric-large" id="dashboardPiTemp">Loading...</div>
+            <div class="dashboard-muted" id="dashboardPiAdvisory">Waiting for temperature data.</div>
+            <div class="dashboard-mini-metrics">
+              <div class="dashboard-mini-metric">
+                <span class="dashboard-mini-label">Cache</span>
+                <strong id="dashboardPiCache">--</strong>
+              </div>
+              <div class="dashboard-mini-metric">
+                <span class="dashboard-mini-label">Updated</span>
+                <strong id="dashboardPiUpdated">--</strong>
+              </div>
+              <div class="dashboard-mini-metric">
+                <span class="dashboard-mini-label">State</span>
+                <strong id="dashboardPiStateText">--</strong>
+              </div>
+            </div>
+          </section>
+
+          <section class="dashboard-overview-section">
+            <div class="dashboard-section-label-row">
+              <div class="dashboard-section-label">LLM Connections</div>
+            </div>
+            <div class="dashboard-stack" id="dashboardLlmList">
+              <div class="empty-state">Checking providers...</div>
+            </div>
+          </section>
+
+          <section class="dashboard-overview-section">
+            <div class="dashboard-section-label-row">
+              <div class="dashboard-section-label">Worker / Service Status</div>
+              <div class="dashboard-status-pill neutral" id="dashboardServiceSummary">Scanning</div>
+            </div>
+            <div class="dashboard-service-list" id="dashboardServiceList">
+              <div class="empty-state">Collecting service data...</div>
+            </div>
+          </section>
+        </div>
+      </article>
+
+      <aside class="panel dashboard-sidebar-card">
+        <div class="dashboard-card-header">
+          <div>
+            <div class="dashboard-card-title">Active Chats</div>
+            <div class="dashboard-card-subtitle">Recent Gio conversations</div>
+          </div>
+          <div class="dashboard-status-pill neutral" id="dashboardChatCount">--</div>
+        </div>
+        <div class="dashboard-stack" id="dashboardChatList">
+          <div class="empty-state">Loading chats...</div>
+        </div>
+      </aside>
     </section>
 
-    <section class="panel">
-      <h2>Debug</h2>
-      <pre id="debugOutput">Waiting...</pre>
+    <section class="panel dashboard-activity-card">
+      <div class="dashboard-card-header">
+        <div>
+          <div class="dashboard-card-title">Recent Activity</div>
+          <div class="dashboard-card-subtitle">Short, useful signals. No filler.</div>
+        </div>
+      </div>
+      <div class="dashboard-activity-list" id="dashboardActivityList">
+        <div class="empty-state">Waiting for live data...</div>
+      </div>
     </section>
   </main>
 </body>

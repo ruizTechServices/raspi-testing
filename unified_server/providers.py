@@ -14,6 +14,18 @@ from unified_server.config import (
     OPENAI_API_KEY,
 )
 
+OPENAI_MODELS = [
+    "gpt-4.1-mini",
+    "gpt-4o-mini",
+    "gpt-4o",
+]
+
+ANTHROPIC_MODELS = [
+    "claude-3-5-haiku-latest",
+    "claude-3-5-sonnet-latest",
+    "claude-sonnet-4-20250514",
+]
+
 
 class ChatProvider(Protocol):
     def chat(self, messages: list[dict[str, str]], model: str | None = None) -> str: ...
@@ -36,13 +48,20 @@ class OpenAIProvider:
 
 class OllamaProvider:
     def chat(self, messages: list[dict[str, str]], model: str | None = None) -> str:
-        response = requests.post(
-            f"{OLLAMA_BASE_URL}/api/chat",
-            json={"model": model or OLLAMA_MODEL, "messages": messages, "stream": False},
-            timeout=120,
-        )
-        response.raise_for_status()
-        return response.json().get("message", {}).get("content", "").strip()
+        try:
+            response = requests.post(
+                f"{OLLAMA_BASE_URL}/api/chat",
+                json={"model": model or OLLAMA_MODEL, "messages": messages, "stream": False},
+                timeout=120,
+            )
+            response.raise_for_status()
+            return response.json().get("message", {}).get("content", "").strip()
+        except requests.exceptions.ConnectionError as exc:
+            raise ValueError("Ollama is offline. Turn on the Ollama server to continue.") from exc
+        except requests.exceptions.Timeout as exc:
+            raise ValueError("Ollama timed out while generating a reply. Check that the server is on and the model is responsive.") from exc
+        except requests.exceptions.RequestException as exc:
+            raise ValueError(f"Ollama request failed: {exc}") from exc
 
 
 class AnthropicProvider:
@@ -90,7 +109,32 @@ class ProviderRegistry:
 
     def list_providers(self) -> list[dict[str, object]]:
         return [
-            {"id": "openai", "configured": bool(OPENAI_API_KEY)},
-            {"id": "ollama", "configured": True},
-            {"id": "anthropic", "configured": bool(ANTHROPIC_API_KEY)},
+            {
+                "id": "openai",
+                "configured": bool(OPENAI_API_KEY),
+                "models": OPENAI_MODELS,
+                "default_model": "gpt-4.1-mini",
+            },
+            {
+                "id": "ollama",
+                "configured": True,
+                "models": self._list_ollama_models(),
+                "default_model": OLLAMA_MODEL,
+            },
+            {
+                "id": "anthropic",
+                "configured": bool(ANTHROPIC_API_KEY),
+                "models": ANTHROPIC_MODELS,
+                "default_model": "claude-sonnet-4-20250514",
+            },
         ]
+
+    def _list_ollama_models(self) -> list[str]:
+        try:
+            response = requests.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=10)
+            response.raise_for_status()
+            models = response.json().get("models", [])
+            names = [item.get("name", "").strip() for item in models if item.get("name")]
+            return names or [OLLAMA_MODEL]
+        except Exception:
+            return [OLLAMA_MODEL]

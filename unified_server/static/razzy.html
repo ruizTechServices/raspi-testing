@@ -3,72 +3,264 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Razzy Chat</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 24px; background: #101418; color: #f4f7fb; }
-    .card { background: #182029; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-    input, select, textarea, button { width: 100%; padding: 10px; margin-top: 8px; border-radius: 8px; border: 1px solid #314050; }
-    button { background: #5b8cff; color: white; font-weight: bold; cursor: pointer; }
-    .messages { white-space: pre-wrap; line-height: 1.5; }
-    .meta { color: #9bb0c7; font-size: 14px; }
-  </style>
+  <title>Razzy Status</title>
+  <link rel="stylesheet" href="/static/app.css" />
+  <script defer src="/static/nav.js"></script>
 </head>
 <body>
-  <div class="card">
-    <h1>RAZZY 🦉</h1>
-    <div class="meta">Personal chatbot interface for Gio</div>
-  </div>
+  <main class="page-shell">
+    <nav class="top-nav" aria-label="Server pages">
+      <div class="top-nav-bar">
+        <a href="/" class="top-nav-brand">Razzy</a>
+        <button id="navMenuBtn" class="nav-toggle" type="button" aria-expanded="false" aria-controls="topNavLinks" aria-label="Toggle navigation menu">
+          <span class="nav-toggle-icon"></span>
+          <span class="nav-toggle-label">Menu</span>
+        </button>
+      </div>
+      <div id="topNavLinks" class="top-nav-links">
+        <a href="/" class="nav-link">Home</a>
+        <a href="/console" class="nav-link">Ollama Chatbot</a>
+        <a href="/razzy" class="nav-link active">Razzy</a>
+        <a href="/gio" class="nav-link">Gio Chat</a>
+        <a href="/gio/dreams" class="nav-link">Dream Mode</a>
+      </div>
+    </nav>
 
-  <div class="card">
-    <label>Provider</label>
-    <select id="provider">
-      <option value="ollama">ollama</option>
-      <option value="openai">openai</option>
-      <option value="anthropic">anthropic</option>
-    </select>
+    <section class="panel">
+      <h1>RAZZY 🦉</h1>
+      <div class="meta">Raspberry Pi status view for Gio. The Razzy chatbot has been removed from this page. Developer testing console lives at <code>/console</code>.</div>
+      <div class="system-metric-grid">
+        <div class="system-metric-card thermal-normal" id="piTemperatureCard" aria-live="polite">
+          <div class="system-metric-header-row">
+            <div class="system-metric-label">Pi Temperature</div>
+            <div class="system-metric-badge" id="piTemperatureBadge">Checking...</div>
+          </div>
+          <div class="system-metric-value" id="piTemperatureValue">Loading...</div>
+          <div class="system-metric-meta" id="piTemperatureMeta">Waiting for sensor data...</div>
+          <div class="system-metric-advisory" id="piTemperatureAdvisory">Thermal guidance will appear here.</div>
+        </div>
 
-    <label>Model</label>
-    <input id="model" value="lfm2.5-thinking:latest">
+        <div class="system-metric-card llm-status-card" id="llmStatusCard" aria-live="polite">
+          <div class="system-metric-header-row">
+            <div class="system-metric-label">LLM Connections</div>
+            <div class="system-action-row">
+              <button id="ollamaStartBtn" class="system-action-btn" type="button">Start Ollama</button>
+              <button id="ollamaStopBtn" class="system-action-btn system-action-btn-danger" type="button">Stop Ollama</button>
+              <button id="llmRefreshBtn" class="system-action-btn" type="button">Refresh</button>
+            </div>
+          </div>
+          <div class="system-metric-meta" id="llmStatusMeta">Press refresh to check Ollama and OpenAI.</div>
+          <div class="llm-loader" id="llmLoader" hidden>
+            <div class="llm-loader-bar"></div>
+          </div>
+          <div class="llm-status-list" id="llmStatusList">
+            <div class="empty-state">No LLM status checked yet.</div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-    <label>Message</label>
-    <textarea id="message" rows="4" placeholder="Talk to Razzy..."></textarea>
-
-    <button onclick="sendMessage()">Send</button>
-  </div>
-
-  <div class="card messages" id="output">No messages yet.</div>
+  </main>
 
   <script>
-    let conversationId = null;
-    const apiKey = 'change-me';
+    const apiKey = window.localStorage.getItem('razzy_api_key') || 'change-me';
+    const piTemperatureCardEl = document.getElementById('piTemperatureCard');
+    const piTemperatureBadgeEl = document.getElementById('piTemperatureBadge');
+    const piTemperatureValueEl = document.getElementById('piTemperatureValue');
+    const piTemperatureMetaEl = document.getElementById('piTemperatureMeta');
+    const piTemperatureAdvisoryEl = document.getElementById('piTemperatureAdvisory');
+    const llmRefreshBtnEl = document.getElementById('llmRefreshBtn');
+    const ollamaStartBtnEl = document.getElementById('ollamaStartBtn');
+    const ollamaStopBtnEl = document.getElementById('ollamaStopBtn');
+    const llmStatusMetaEl = document.getElementById('llmStatusMeta');
+    const llmLoaderEl = document.getElementById('llmLoader');
+    const llmStatusListEl = document.getElementById('llmStatusList');
+    let ollamaAvailability = 'unknown';
+    let llmBusy = false;
 
-    async function ensureConversation() {
-      if (conversationId) return conversationId;
-      const res = await fetch('/api/razzy/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
-        body: JSON.stringify({ title: 'Razzy Web Chat' })
-      });
-      const data = await res.json();
-      conversationId = data.conversation_id;
-      return conversationId;
+    async function fetchAPI(url, options = {}) {
+      const res = await fetch(url, options);
+      const contentType = res.headers.get('content-type') || '';
+      const raw = await res.text();
+      const isJSON = contentType.includes('application/json');
+      const data = isJSON && raw ? JSON.parse(raw) : null;
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error('Unauthorized. Add a valid API key to use Razzy Chat.');
+        }
+        if (data?.error) {
+          throw new Error(data.error);
+        }
+        if (!isJSON) {
+          throw new Error('The server returned an unexpected page instead of API JSON.');
+        }
+        throw new Error('Request failed');
+      }
+
+      if (!isJSON) {
+        throw new Error('The server returned an unexpected page instead of API JSON.');
+      }
+
+      return data;
     }
 
-    async function sendMessage() {
-      const message = document.getElementById('message').value;
-      const provider = document.getElementById('provider').value;
-      const model = document.getElementById('model').value;
-      const output = document.getElementById('output');
-      const cid = await ensureConversation();
-
-      const res = await fetch('/api/razzy/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
-        body: JSON.stringify({ conversation_id: cid, message, provider, model })
-      });
-      const data = await res.json();
-      output.textContent = 'Razzy: ' + (data.message?.content || JSON.stringify(data, null, 2));
+    function formatTime(value) {
+      if (!value) return '';
+      try {
+        return new Date(value * 1000).toLocaleTimeString();
+      } catch {
+        return '';
+      }
     }
+
+    function applyThermalState(state) {
+      piTemperatureCardEl.classList.remove('thermal-cool', 'thermal-normal', 'thermal-warm', 'thermal-hot');
+      piTemperatureCardEl.classList.add(`thermal-${state}`);
+    }
+
+    function escapeHtml(value) {
+      return String(value || '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function renderLlmChecks(checks) {
+      if (!checks.length) {
+        llmStatusListEl.innerHTML = '<div class="empty-state">No provider results returned.</div>';
+        return;
+      }
+
+      llmStatusListEl.innerHTML = checks.map((check) => {
+        const stateClass = check.ok ? 'ok' : 'error';
+        const models = Array.isArray(check.models) && check.models.length
+          ? `<div class="llm-status-models">Models: ${escapeHtml(check.models.join(', '))}</div>`
+          : '';
+        const error = check.error
+          ? `<div class="llm-status-error">${escapeHtml(check.error)}</div>`
+          : '';
+        return `
+          <div class="llm-status-item ${stateClass}">
+            <div class="llm-status-row">
+              <div class="llm-status-provider">${escapeHtml(check.provider)}</div>
+              <div class="system-metric-badge">${escapeHtml(check.status)}</div>
+            </div>
+            <div class="llm-status-detail">${escapeHtml(check.detail || '')}</div>
+            ${models}
+            ${error}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateOllamaActionButtons() {
+      if (llmBusy) {
+        ollamaStartBtnEl.disabled = true;
+        ollamaStopBtnEl.disabled = true;
+        return;
+      }
+
+      if (ollamaAvailability === 'online') {
+        ollamaStartBtnEl.disabled = true;
+        ollamaStopBtnEl.disabled = false;
+        return;
+      }
+
+      if (ollamaAvailability === 'offline') {
+        ollamaStartBtnEl.disabled = false;
+        ollamaStopBtnEl.disabled = true;
+        return;
+      }
+
+      ollamaStartBtnEl.disabled = false;
+      ollamaStopBtnEl.disabled = false;
+    }
+
+    function setLlmBusy(isBusy, message) {
+      llmBusy = isBusy;
+      llmRefreshBtnEl.disabled = isBusy;
+      llmLoaderEl.hidden = !isBusy;
+      updateOllamaActionButtons();
+      if (message) {
+        llmStatusMetaEl.textContent = message;
+      }
+    }
+
+    async function refreshLlmStatus() {
+      setLlmBusy(true, 'Checking connections...');
+      try {
+        const data = await fetchAPI('/api/system/llm-status');
+        const checks = data.checks || [];
+        renderLlmChecks(checks);
+        const ollamaCheck = checks.find((check) => check.provider === 'ollama');
+        ollamaAvailability = ollamaCheck?.ok ? 'online' : ollamaCheck?.status === 'offline' ? 'offline' : 'unknown';
+        const checkedAt = data.checked_at ? new Date(data.checked_at * 1000).toLocaleTimeString() : 'just now';
+        llmStatusMetaEl.textContent = `Last checked at ${checkedAt}.`;
+      } catch (error) {
+        ollamaAvailability = 'unknown';
+        llmStatusListEl.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
+        llmStatusMetaEl.textContent = 'LLM status check failed.';
+      } finally {
+        setLlmBusy(false);
+      }
+    }
+
+    async function controlOllama(action) {
+      const actionLabel = action === 'stop' ? 'Stopping' : action === 'start' ? 'Starting' : 'Updating';
+      setLlmBusy(true, `${actionLabel} Ollama...`);
+      try {
+        const data = await fetchAPI('/api/system/ollama/control', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': apiKey,
+          },
+          body: JSON.stringify({ action }),
+        });
+
+        const detail = data.detail || `Ollama ${action} completed.`;
+        const state = data.service_state ? ` Current state: ${data.service_state}.` : '';
+        const stderr = data.stderr ? ` ${data.stderr}` : '';
+        llmStatusMetaEl.textContent = `${detail}${state}${stderr}`.trim();
+        await refreshLlmStatus();
+      } catch (error) {
+        llmStatusMetaEl.textContent = `Ollama ${action} failed.`;
+        llmStatusListEl.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
+      } finally {
+        setLlmBusy(false);
+      }
+    }
+
+    async function loadPiTemperature() {
+      try {
+        const data = await fetchAPI('/api/system/temperature');
+        const state = data.thermal_state || 'normal';
+        applyThermalState(state);
+        piTemperatureBadgeEl.textContent = state.toUpperCase();
+        piTemperatureValueEl.textContent = `${data.temperature_f.toFixed(1)}°F`;
+        const sourceLabel = data.cached ? 'Cached' : 'Fresh';
+        const updatedAt = formatTime(data.fetched_at);
+        piTemperatureMetaEl.textContent = `${sourceLabel} reading, updated ${updatedAt || 'just now'}, cache ${data.cache_ttl_seconds}s.`;
+        piTemperatureAdvisoryEl.textContent = data.advisory || 'No thermal advisory available.';
+      } catch (error) {
+        applyThermalState('hot');
+        piTemperatureBadgeEl.textContent = 'UNAVAILABLE';
+        piTemperatureValueEl.textContent = 'Unavailable';
+        piTemperatureMetaEl.textContent = error.message;
+        piTemperatureAdvisoryEl.textContent = 'Temperature telemetry is unavailable right now.';
+      }
+    }
+
+    llmRefreshBtnEl.addEventListener('click', refreshLlmStatus);
+    ollamaStartBtnEl.addEventListener('click', () => controlOllama('start'));
+    ollamaStopBtnEl.addEventListener('click', () => controlOllama('stop'));
+
+    updateOllamaActionButtons();
+    loadPiTemperature();
+    window.setInterval(loadPiTemperature, 15000);
   </script>
 </body>
 </html>

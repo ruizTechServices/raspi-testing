@@ -1,0 +1,310 @@
+.gio-layout {
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  align-items: start;
+  min-height: calc(100dvh - 32px);
+}
+
+.gio-layout .top-nav {
+  grid-column: 1 / -1;
+}
+
+.top-nav {
+  align-items: center;
+}
+
+.top-nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.top-nav-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+}
+
+.mobile-sidebar-toggle,
+.chat-sidebar-btn {
+  display: none;
+  width: auto;
+  white-space: nowrap;
+}
+
+.mobile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+  z-index: 35;
+}
+
+.sidebar-panel,
+.chat-panel {
+  min-height: 0;
+}
+
+.sidebar-panel {
+  position: sticky;
+  top: 16px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  max-height: calc(100dvh - 32px);
+  overflow: hidden;
+}
+
+.sidebar-header,
+.chat-header,
+.composer-row,
+.chat-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.chat-title-row {
+  margin-bottom: 8px;
+}
+
+.sidebar-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.conversation-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.conversation-item {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  background: #0b0f14;
+  cursor: pointer;
+  text-align: left;
+}
+
+.conversation-item.active {
+  border-color: #1f6feb;
+  background: #111827;
+}
+
+.conversation-title {
+  font-weight: 700;
+}
+
+.conversation-time,
+.message-time,
+.message-model {
+  color: #9da7b3;
+  font-size: 12px;
+}
+
+.chat-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 16px;
+  min-height: calc(100dvh - 32px);
+  max-height: calc(100dvh - 32px);
+}
+
+.chat-header {
+  align-items: end;
+}
+
+.chat-controls {
+  flex-shrink: 0;
+}
+
+.gio-transcript {
+  min-height: 0;
+  overflow: auto;
+  padding-right: 4px;
+  padding-bottom: 8px;
+}
+
+.gio-message {
+  display: grid;
+  gap: 8px;
+}
+
+.gio-message.user .message-card {
+  border-color: #1f6feb;
+}
+
+.gio-thinking {
+  margin-top: 8px;
+  border-top: 1px dashed #30363d;
+  padding-top: 8px;
+}
+
+.message-footer {
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.message-model {
+  text-align: right;
+}
+
+.composer {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  gap: 10px;
+  padding-top: 12px;
+  background: linear-gradient(to bottom, rgba(22, 27, 34, 0.82), #161b22 24px);
+  border-top: 1px solid #30363d;
+}
+
+#gioMessageInput {
+  min-height: 64px;
+  max-height: 32dvh;
+}
+
+.composer-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.gio-message.is-streaming .message-card {
+  border-style: dashed;
+  border-color: #58a6ff;
+}
+
+.compact-field {
+  min-width: 220px;
+}
+
+@media (max-width: 900px) {
+  .gio-layout {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .mobile-sidebar-toggle,
+  .chat-sidebar-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .top-nav {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+  }
+
+  .mobile-sidebar-toggle {
+    position: sticky;
+    top: 78px;
+    z-index: 30;
+    justify-self: start;
+    width: auto;
+  }
+
+  .sidebar-panel,
+  .chat-panel {
+    min-height: auto;
+    max-height: none;
+  }
+
+  .sidebar-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(86vw, 360px);
+    max-height: 100dvh;
+    border-radius: 0 16px 16px 0;
+    z-index: 45;
+    transform: translateX(-105%);
+    transition: transform 0.22s ease;
+    overflow: hidden;
+  }
+
+  body.mobile-sidebar-open .sidebar-panel {
+    transform: translateX(0);
+  }
+
+  body.mobile-sidebar-open {
+    overflow: hidden;
+  }
+
+  .conversation-list {
+    max-height: none;
+    padding-bottom: 12px;
+  }
+
+  .chat-header,
+  .composer-row,
+  .sidebar-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .chat-title-row {
+    margin-bottom: 6px;
+  }
+
+  .chat-panel {
+    min-height: calc(100dvh - 84px);
+  }
+
+  .gio-transcript {
+    min-height: 42dvh;
+  }
+
+  .composer {
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .sidebar-actions,
+  .composer-actions {
+    width: 100%;
+  }
+
+  .sidebar-actions button,
+  .composer-actions button {
+    flex: 1 1 0;
+  }
+
+  .compact-field {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .panel {
+    padding: 12px;
+  }
+
+  .conversation-item,
+  .message-card {
+    border-radius: 12px;
+  }
+
+  #gioMessageInput {
+    min-height: 56px;
+  }
+
+  .mobile-sidebar-toggle {
+    top: 74px;
+  }
+}

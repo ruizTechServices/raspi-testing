@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gio Dream Mode</title>
+  <link rel="stylesheet" href="/static/app.css?v=20260501a" />
+  <link rel="stylesheet" href="/static/gio.css?v=20260501a" />
+  <script defer src="/static/nav.js"></script>
+  <script defer src="/static/gio-dreams.js?v=20260501a"></script>
+</head>
+<body>
+  <main class="page-shell gio-layout">
+    <nav class="top-nav" aria-label="Server pages">
+      <div class="top-nav-bar">
+        <a href="/" class="top-nav-brand">Razzy</a>
+        <button id="navMenuBtn" class="nav-toggle" type="button" aria-expanded="false" aria-controls="topNavLinks" aria-label="Toggle navigation menu">
+          <span class="nav-toggle-icon"></span>
+          <span class="nav-toggle-label">Menu</span>
+        </button>
+      </div>
+      <div id="topNavLinks" class="top-nav-links">
+        <a href="/" class="nav-link">Home</a>
+        <a href="/console" class="nav-link">Ollama Chatbot</a>
+        <a href="/razzy" class="nav-link">Razzy</a>
+        <a href="/gio" class="nav-link">Gio Chat</a>
+        <a href="/gio/dreams" class="nav-link active">Dream Mode</a>
+      </div>
+    </nav>
+
+    <aside class="panel sidebar-panel">
+      <div class="sidebar-header">
+        <h2>Dream Entries</h2>
+        <div class="sidebar-actions">
+          <button id="refreshDreamsBtn" type="button">Refresh</button>
+        </div>
+      </div>
+      <div id="dreamList" class="conversation-list">
+        <div class="empty-state">Loading dream entries...</div>
+      </div>
+    </aside>
+
+    <section class="panel chat-panel">
+      <div class="chat-header">
+        <div>
+          <h1>Dream Mode</h1>
+          <div class="meta" id="dreamMeta">Reflection entries generated from Gio conversations.</div>
+        </div>
+      </div>
+
+      <div id="dreamDetail" class="transcript gio-transcript">
+        <div class="empty-state">Pick a dream entry to inspect it.</div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

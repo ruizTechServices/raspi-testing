@@ -21,6 +21,8 @@ ENV/
 .coverage
 .coverage.*
 htmlcov/
+.cache/
+coverage/
 
 # Local databases, logs, runtime artifacts
 *.db
@@ -31,6 +33,23 @@ data/
 logs/
 tmp/
 temp/
+*.pid
+*.sock
+
+# Local packages / archives
+*.deb
+*.rpm
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+
+# Environment / local overrides
+.python-version
+.envrc
+
+# Frontend / misc caches
+.parcel-cache/
 
 # OS/editor junk
 .DS_Store
@@ -41,5 +60,9 @@ Thumbs.db
 # Python build artifacts
 build/
 dist/
+site/
 *.egg-info/
 .eggs/
+
+# Notebook / local analysis noise
+.ipynb_checkpoints/

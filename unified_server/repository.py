@@ -29,6 +29,35 @@ class SQLiteRepository:
             ).fetchall()
         return [Conversation(**dict(row)) for row in rows]
 
+    def conversation_exists(self, conversation_id: str) -> bool:
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT 1 FROM conversations WHERE id = ?",
+                (conversation_id,),
+            ).fetchone()
+        return row is not None
+
+    def update_conversation_title(self, conversation_id: str, title: str) -> Conversation:
+        now = self._utc_now()
+        with get_connection() as conn:
+            conn.execute(
+                "UPDATE conversations SET title = ?, updated_at = ? WHERE id = ?",
+                (title, now, conversation_id),
+            )
+            conn.commit()
+            row = conn.execute(
+                "SELECT id, title, created_at, updated_at FROM conversations WHERE id = ?",
+                (conversation_id,),
+            ).fetchone()
+        if not row:
+            raise ValueError("Conversation not found.")
+        return Conversation(**dict(row))
+
+    def delete_conversation(self, conversation_id: str) -> None:
+        with get_connection() as conn:
+            conn.execute("DELETE FROM conversations WHERE id = ?", (conversation_id,))
+            conn.commit()
+
     def get_messages(self, conversation_id: str) -> list[ChatMessage]:
         with get_connection() as conn:
             rows = conn.execute(

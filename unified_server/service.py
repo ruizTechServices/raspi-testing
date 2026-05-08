@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import asdict
+
 from unified_server.config import DEFAULT_MODEL, DEFAULT_PROVIDER
 from unified_server.memory import MemoryService
 from unified_server.providers import ProviderRegistry
@@ -25,12 +27,26 @@ class ChatService:
         return self.repository.create_conversation(title=title)
 
     def get_messages(self, conversation_id: str):
+        self._require_conversation(conversation_id)
         return self.repository.get_messages(conversation_id)
+
+    def rename_conversation(self, conversation_id: str, title: str) -> dict:
+        self._require_conversation(conversation_id)
+        cleaned = " ".join((title or "").split()).strip()
+        if not cleaned:
+            raise ValueError("Title cannot be empty.")
+        return asdict(self.repository.update_conversation_title(conversation_id, cleaned))
+
+    def delete_conversation(self, conversation_id: str) -> None:
+        self._require_conversation(conversation_id)
+        self.repository.delete_conversation(conversation_id)
 
     def chat(self, conversation_id: str, user_text: str, provider_name: str | None = None, model: str | None = None) -> dict:
         cleaned = user_text.strip()
         if not cleaned:
             raise ValueError("Message cannot be empty.")
+
+        self._require_conversation(conversation_id)
 
         provider_name = provider_name or DEFAULT_PROVIDER
         model = model or DEFAULT_MODEL
@@ -73,3 +89,10 @@ class ChatService:
                 "model": model,
             },
         }
+
+    def _require_conversation(self, conversation_id: str) -> None:
+        cleaned = (conversation_id or "").strip()
+        if not cleaned:
+            raise ValueError("conversation_id is required.")
+        if not self.repository.conversation_exists(cleaned):
+            raise ValueError("Conversation not found.")
