@@ -1,5 +1,26 @@
 from __future__ import annotations
 
+import pytest
+
+from unified_server.razzy.service import RazzyService
+
+
+def test_razzy_chat_validates_conversation_exists(fake_service):
+    razzy = RazzyService(repository=fake_service.repository, providers=fake_service.providers)
+
+    with pytest.raises(ValueError, match="Conversation not found"):
+        razzy.chat("no-such-conversation", "hello razzy")
+
+
+def test_razzy_chat_works_for_existing_conversation(fake_service):
+    razzy = RazzyService(repository=fake_service.repository, providers=fake_service.providers)
+    conversation_id = razzy.create_session()
+
+    result = razzy.chat(conversation_id, "hello razzy")
+
+    assert result["conversation_id"] == conversation_id
+    assert result["message"]["content"] == "fake response"
+
 
 def test_razzy_profile_returns_identity(client):
     response = client.get('/api/razzy/profile')

@@ -9,7 +9,7 @@ from openai import OpenAI
 from unified_server.gio_repository import GioDream, GioMessage, GioSupabaseRepository
 from unified_server.settings import get_settings
 from unified_server.providers import OPENAI_MODELS, ProviderRegistry
-from unified_server.service import DEFAULT_SYSTEM_PROMPT
+from unified_server.core.prompts import DEFAULT_SYSTEM_PROMPT
 
 
 class GioService:

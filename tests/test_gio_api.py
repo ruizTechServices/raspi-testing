@@ -3,8 +3,8 @@ from __future__ import annotations
 import pytest
 
 from unified_server.app_factory import create_app
-from unified_server.razzy_service import RazzyService
-from unified_server.service import ChatService
+from unified_server.razzy.service import RazzyService
+from unified_server.chat.service import ChatService
 from unified_server.settings import get_settings
 from unified_server.twitter_service import TwitterService
 

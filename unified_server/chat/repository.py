@@ -3,8 +3,9 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from unified_server.database import get_connection
-from unified_server.models import ChatMessage, Conversation, MemoryCell
+from unified_server.chat.database import get_connection
+from unified_server.chat.models import ChatMessage, Conversation, MemoryCell
+from unified_server.core.conversations import derive_auto_title
 
 
 class SQLiteRepository:
@@ -76,9 +77,7 @@ class SQLiteRepository:
             conn.execute("UPDATE conversations SET updated_at = ? WHERE id = ?", (now, conversation_id))
             current = conn.execute("SELECT title FROM conversations WHERE id = ?", (conversation_id,)).fetchone()
             if current and current['title'] == 'New Chat' and role == 'user':
-                title = " ".join(content.strip().split())[:60]
-                if len(content.strip()) > 60:
-                    title += '...'
+                title = derive_auto_title(content)
                 if title:
                     conn.execute("UPDATE conversations SET title = ? WHERE id = ?", (title, conversation_id))
             conn.commit()
