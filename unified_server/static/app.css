@@ -1234,6 +1234,7 @@ pre {
   display: grid;
   gap: 12px;
   align-content: start;
+  min-width: 0;
   padding: 16px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 14px;
@@ -1241,7 +1242,7 @@ pre {
 }
 
 .dashboard-metric-medium {
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 800;
   color: #f8fbff;
   word-break: break-all;
@@ -1278,7 +1279,9 @@ pre {
 }
 
 .dashboard-widget-apod .apod-image {
+  display: block;
   width: 100%;
+  min-width: 0;
   max-height: 220px;
   object-fit: cover;
   border-radius: 12px;
