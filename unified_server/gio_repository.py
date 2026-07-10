@@ -6,7 +6,7 @@ import json
 from typing import Any
 from uuid import uuid4
 
-from unified_server.config import GIO_CONVERSATIONS_TABLE, GIO_DREAMS_TABLE, GIO_MESSAGES_TABLE, GIO_SUMMARIES_TABLE
+from unified_server.settings import get_settings
 from unified_server.supabase_client import SupabaseRequestError, SupabaseRestClient
 
 
@@ -58,10 +58,11 @@ class GioDream:
 class GioSupabaseRepository:
     def __init__(self, client: SupabaseRestClient | None = None) -> None:
         self.client = client or SupabaseRestClient()
-        self.conversations_table = GIO_CONVERSATIONS_TABLE
-        self.messages_table = GIO_MESSAGES_TABLE
-        self.summaries_table = GIO_SUMMARIES_TABLE
-        self.dreams_table = GIO_DREAMS_TABLE
+        settings = get_settings()
+        self.conversations_table = settings.GIO_CONVERSATIONS_TABLE
+        self.messages_table = settings.GIO_MESSAGES_TABLE
+        self.summaries_table = settings.GIO_SUMMARIES_TABLE
+        self.dreams_table = settings.GIO_DREAMS_TABLE
         self._summary_table_available: bool | None = None
         self._dream_table_available: bool | None = None
 

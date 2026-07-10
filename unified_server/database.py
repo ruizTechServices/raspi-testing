@@ -3,7 +3,7 @@ from __future__ import annotations
 import sqlite3
 from contextlib import contextmanager
 
-from unified_server.config import DB_PATH
+from unified_server.settings import get_settings
 
 
 SCHEMA = """
@@ -43,14 +43,14 @@ CREATE INDEX IF NOT EXISTS idx_memory_cells_conversation_id ON memory_cells(conv
 
 
 def init_db() -> None:
-    with sqlite3.connect(DB_PATH) as conn:
+    with sqlite3.connect(get_settings().DB_PATH) as conn:
         conn.executescript(SCHEMA)
         conn.commit()
 
 
 @contextmanager
 def get_connection():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(get_settings().DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON;")
     try:

@@ -10,11 +10,11 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from unified_server import config
 from unified_server.app_factory import create_app
 from unified_server.database import init_db
 from unified_server.razzy_service import RazzyService
 from unified_server.service import ChatService
+from unified_server.settings import get_settings
 from unified_server.twitter_service import TwitterService
 
 
@@ -82,7 +82,7 @@ class FakeTwitterClient:
 def temp_db(monkeypatch):
     with tempfile.TemporaryDirectory() as tmpdir:
         db_path = Path(tmpdir) / "test_chat.db"
-        monkeypatch.setattr(config, "DB_PATH", db_path)
+        monkeypatch.setattr(get_settings(), "DB_PATH", db_path)
         init_db()
         yield db_path
 
@@ -96,7 +96,7 @@ def fake_service(temp_db):
 
 @pytest.fixture()
 def app(fake_service, monkeypatch):
-    monkeypatch.setattr(config, "API_KEY", "test-key")
+    monkeypatch.setattr(get_settings(), "API_KEY", "test-key")
     razzy_service = RazzyService(repository=fake_service.repository, providers=fake_service.providers)
     twitter_service = TwitterService(client=FakeTwitterClient())
     app = create_app(service=fake_service, razzy_service=razzy_service, twitter_service=twitter_service)

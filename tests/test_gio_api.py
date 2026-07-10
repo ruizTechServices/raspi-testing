@@ -1,9 +1,17 @@
 from __future__ import annotations
 
+import pytest
+
 from unified_server.app_factory import create_app
 from unified_server.razzy_service import RazzyService
 from unified_server.service import ChatService
+from unified_server.settings import get_settings
 from unified_server.twitter_service import TwitterService
+
+
+@pytest.fixture(autouse=True)
+def _gio_api_key(monkeypatch, temp_db):
+    monkeypatch.setattr(get_settings(), "API_KEY", "change-me")
 
 
 class FakeGioService:

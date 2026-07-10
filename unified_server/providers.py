@@ -6,13 +6,7 @@ import anthropic
 import requests
 from openai import OpenAI
 
-from unified_server.config import (
-    ANTHROPIC_API_KEY,
-    DEFAULT_MODEL,
-    OLLAMA_BASE_URL,
-    OLLAMA_MODEL,
-    OPENAI_API_KEY,
-)
+from unified_server.settings import get_settings
 
 OPENAI_MODELS = [
     "gpt-4.1-mini",
@@ -33,13 +27,14 @@ class ChatProvider(Protocol):
 
 class OpenAIProvider:
     def __init__(self) -> None:
-        self.client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
+        api_key = get_settings().OPENAI_API_KEY
+        self.client = OpenAI(api_key=api_key) if api_key else None
 
     def chat(self, messages: list[dict[str, str]], model: str | None = None) -> str:
         if not self.client:
             raise ValueError("OPENAI_API_KEY is not set.")
         response = self.client.responses.create(
-            model=model or DEFAULT_MODEL,
+            model=model or get_settings().DEFAULT_MODEL,
             input=messages,
             store=False,
         )
@@ -48,10 +43,11 @@ class OpenAIProvider:
 
 class OllamaProvider:
     def chat(self, messages: list[dict[str, str]], model: str | None = None) -> str:
+        settings = get_settings()
         try:
             response = requests.post(
-                f"{OLLAMA_BASE_URL}/api/chat",
-                json={"model": model or OLLAMA_MODEL, "messages": messages, "stream": False},
+                f"{settings.OLLAMA_BASE_URL}/api/chat",
+                json={"model": model or settings.OLLAMA_MODEL, "messages": messages, "stream": False},
                 timeout=120,
             )
             response.raise_for_status()
@@ -66,7 +62,8 @@ class OllamaProvider:
 
 class AnthropicProvider:
     def __init__(self) -> None:
-        self.client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY) if ANTHROPIC_API_KEY else None
+        api_key = get_settings().ANTHROPIC_API_KEY
+        self.client = anthropic.Anthropic(api_key=api_key) if api_key else None
 
     def chat(self, messages: list[dict[str, str]], model: str | None = None) -> str:
         if not self.client:
@@ -108,10 +105,11 @@ class ProviderRegistry:
         return self.providers[name]
 
     def list_providers(self) -> list[dict[str, object]]:
+        settings = get_settings()
         return [
             {
                 "id": "openai",
-                "configured": bool(OPENAI_API_KEY),
+                "configured": bool(settings.OPENAI_API_KEY),
                 "models": OPENAI_MODELS,
                 "default_model": "gpt-4.1-mini",
             },
@@ -119,22 +117,23 @@ class ProviderRegistry:
                 "id": "ollama",
                 "configured": True,
                 "models": self._list_ollama_models(),
-                "default_model": OLLAMA_MODEL,
+                "default_model": settings.OLLAMA_MODEL,
             },
             {
                 "id": "anthropic",
-                "configured": bool(ANTHROPIC_API_KEY),
+                "configured": bool(settings.ANTHROPIC_API_KEY),
                 "models": ANTHROPIC_MODELS,
                 "default_model": "claude-sonnet-4-20250514",
             },
         ]
 
     def _list_ollama_models(self) -> list[str]:
+        settings = get_settings()
         try:
-            response = requests.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=10)
+            response = requests.get(f"{settings.OLLAMA_BASE_URL}/api/tags", timeout=10)
             response.raise_for_status()
             models = response.json().get("models", [])
             names = [item.get("name", "").strip() for item in models if item.get("name")]
-            return names or [OLLAMA_MODEL]
+            return names or [settings.OLLAMA_MODEL]
         except Exception:
-            return [OLLAMA_MODEL]
+            return [settings.OLLAMA_MODEL]

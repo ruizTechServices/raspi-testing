@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from unified_server.config import DEFAULT_MODEL, DEFAULT_PROVIDER
 from unified_server.providers import ProviderRegistry
 from unified_server.razzy_identity import DEFAULT_RAZZY_SYSTEM_PROMPT, RAZZY_IDENTITY
 from unified_server.razzy_memory import RazzyMemoryService
 from unified_server.repository import SQLiteRepository
+from unified_server.settings import get_settings
 
 
 class RazzyService:
@@ -38,8 +38,9 @@ class RazzyService:
         if not cleaned:
             raise ValueError("Message cannot be empty.")
 
-        provider_name = provider_name or DEFAULT_PROVIDER
-        model = model or DEFAULT_MODEL
+        settings = get_settings()
+        provider_name = provider_name or settings.DEFAULT_PROVIDER
+        model = model or settings.DEFAULT_MODEL
 
         self.repository.add_message(
             conversation_id=conversation_id,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-import unified_server.gio_service as gio_service_module
+from unified_server.settings import get_settings
 from unified_server.gio_repository import GioConversation, GioDream, GioMessage, GioSummary
 from unified_server.gio_service import GioService
 
@@ -151,9 +151,9 @@ def test_gio_chat_uses_recent_window_and_semantic_recall(monkeypatch):
     service = GioService(repository=repository, providers=FakeProviderRegistry(provider))
     service.openai_client = None
 
-    monkeypatch.setattr(gio_service_module, "GIO_RECENT_MESSAGES_LIMIT", 2)
-    monkeypatch.setattr(gio_service_module, "GIO_RECALL_TOP_K", 2)
-    monkeypatch.setattr(gio_service_module, "GIO_RECALL_MIN_SCORE", 0.2)
+    monkeypatch.setattr(get_settings(), "GIO_RECENT_MESSAGES_LIMIT", 2)
+    monkeypatch.setattr(get_settings(), "GIO_RECALL_TOP_K", 2)
+    monkeypatch.setattr(get_settings(), "GIO_RECALL_MIN_SCORE", 0.2)
     monkeypatch.setattr(service, "_embed", lambda text: [1.0, 0.0] if "favorite color" in text.lower() else [0.5, 0.5])
 
     service.chat_once("conv-1", "What is my favorite color?", provider_name="openai", model="gpt-4.1-mini")
@@ -180,7 +180,7 @@ def test_gio_chat_without_embedding_falls_back_to_recent_messages(monkeypatch):
     service = GioService(repository=repository, providers=FakeProviderRegistry(provider))
     service.openai_client = None
 
-    monkeypatch.setattr(gio_service_module, "GIO_RECENT_MESSAGES_LIMIT", 2)
+    monkeypatch.setattr(get_settings(), "GIO_RECENT_MESSAGES_LIMIT", 2)
     monkeypatch.setattr(service, "_embed", lambda text: None)
 
     service.chat_once("conv-1", "Newest message", provider_name="openai", model="gpt-4.1-mini")
@@ -201,7 +201,7 @@ def test_gio_chat_includes_latest_rolling_summary(monkeypatch):
     service = GioService(repository=repository, providers=FakeProviderRegistry(provider))
     service.openai_client = None
 
-    monkeypatch.setattr(gio_service_module, "GIO_RECENT_MESSAGES_LIMIT", 3)
+    monkeypatch.setattr(get_settings(), "GIO_RECENT_MESSAGES_LIMIT", 3)
     monkeypatch.setattr(service, "_embed", lambda text: None)
 
     service.chat_once("conv-1", "Newest message", provider_name="openai", model="gpt-4.1-mini")
@@ -223,8 +223,8 @@ def test_gio_chat_rolls_new_summary_when_old_context_grows(monkeypatch):
     service = GioService(repository=repository, providers=FakeProviderRegistry(provider))
     service.openai_client = None
 
-    monkeypatch.setattr(gio_service_module, "GIO_RECENT_MESSAGES_LIMIT", 2)
-    monkeypatch.setattr(gio_service_module, "GIO_SUMMARY_TRIGGER_MESSAGES", 2)
+    monkeypatch.setattr(get_settings(), "GIO_RECENT_MESSAGES_LIMIT", 2)
+    monkeypatch.setattr(get_settings(), "GIO_SUMMARY_TRIGGER_MESSAGES", 2)
     monkeypatch.setattr(service, "_embed", lambda text: None)
     monkeypatch.setattr(service, "_summarize_messages", lambda messages, previous_summary=None: "- Durable summary")
 
@@ -249,8 +249,8 @@ def test_gio_chat_does_not_churn_duplicate_summary(monkeypatch):
     service = GioService(repository=repository, providers=FakeProviderRegistry(provider))
     service.openai_client = None
 
-    monkeypatch.setattr(gio_service_module, "GIO_RECENT_MESSAGES_LIMIT", 2)
-    monkeypatch.setattr(gio_service_module, "GIO_SUMMARY_TRIGGER_MESSAGES", 2)
+    monkeypatch.setattr(get_settings(), "GIO_RECENT_MESSAGES_LIMIT", 2)
+    monkeypatch.setattr(get_settings(), "GIO_SUMMARY_TRIGGER_MESSAGES", 2)
     monkeypatch.setattr(service, "_embed", lambda text: None)
     monkeypatch.setattr(service, "_summarize_messages", lambda messages, previous_summary=None: "- Durable summary")
 
@@ -271,8 +271,8 @@ def test_gio_chat_refreshes_summary_when_recent_user_message_is_a_correction(mon
     service = GioService(repository=repository, providers=FakeProviderRegistry(provider))
     service.openai_client = None
 
-    monkeypatch.setattr(gio_service_module, "GIO_RECENT_MESSAGES_LIMIT", 2)
-    monkeypatch.setattr(gio_service_module, "GIO_SUMMARY_TRIGGER_MESSAGES", 8)
+    monkeypatch.setattr(get_settings(), "GIO_RECENT_MESSAGES_LIMIT", 2)
+    monkeypatch.setattr(get_settings(), "GIO_SUMMARY_TRIGGER_MESSAGES", 8)
     monkeypatch.setattr(service, "_embed", lambda text: None)
 
     captured = {}
@@ -336,7 +336,7 @@ def test_gio_dream_prefers_corrections_and_recent_context(monkeypatch):
     service = GioService(repository=repository, providers=FakeProviderRegistry(provider))
     service.openai_client = object()
 
-    monkeypatch.setattr(gio_service_module, "GIO_DREAM_SOURCE_LIMIT", 6)
+    monkeypatch.setattr(get_settings(), "GIO_DREAM_SOURCE_LIMIT", 6)
     monkeypatch.setattr(service, "_embed", lambda text: None)
 
     captured = {}

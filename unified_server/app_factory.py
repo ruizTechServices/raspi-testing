@@ -12,12 +12,12 @@ from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
-from unified_server.config import ALLOWED_ORIGINS, FLASK_ENV, OLLAMA_BASE_URL, OPENAI_API_KEY
 from unified_server.database import init_db
 from unified_server.gio_service import GioService
 from unified_server.razzy_service import RazzyService
 from unified_server.security import attach_security_headers, require_api_key
 from unified_server.service import ChatService
+from unified_server.settings import get_settings
 from unified_server.twitter_service import TwitterClientConfigError, TwitterClientError, TwitterService
 
 
@@ -91,15 +91,16 @@ def _get_pi_temperature_snapshot(now: float | None = None) -> dict[str, object]:
 
 
 def _probe_ollama_status() -> dict[str, object]:
+    ollama_base_url = get_settings().OLLAMA_BASE_URL
     try:
-        response = requests.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=8)
+        response = requests.get(f"{ollama_base_url}/api/tags", timeout=8)
         response.raise_for_status()
         models = response.json().get("models", [])
         return {
             "provider": "ollama",
             "ok": True,
             "status": "online",
-            "detail": f"Reachable at {OLLAMA_BASE_URL}.",
+            "detail": f"Reachable at {ollama_base_url}.",
             "models": [item.get("name", "").strip() for item in models if item.get("name")],
         }
     except requests.exceptions.ConnectionError as exc:
@@ -107,7 +108,7 @@ def _probe_ollama_status() -> dict[str, object]:
             "provider": "ollama",
             "ok": False,
             "status": "offline",
-            "detail": f"Ollama is not reachable at {OLLAMA_BASE_URL}.",
+            "detail": f"Ollama is not reachable at {ollama_base_url}.",
             "error": str(exc),
             "models": [],
         }
@@ -132,7 +133,8 @@ def _probe_ollama_status() -> dict[str, object]:
 
 
 def _probe_openai_status() -> dict[str, object]:
-    if not OPENAI_API_KEY:
+    openai_api_key = get_settings().OPENAI_API_KEY
+    if not openai_api_key:
         return {
             "provider": "openai",
             "ok": False,
@@ -143,7 +145,7 @@ def _probe_openai_status() -> dict[str, object]:
     try:
         response = requests.get(
             "https://api.openai.com/v1/models",
-            headers={"Authorization": f"Bearer {OPENAI_API_KEY}"},
+            headers={"Authorization": f"Bearer {openai_api_key}"},
             timeout=10,
         )
         if response.status_code == 200:
@@ -258,11 +260,12 @@ def create_app(
     twitter_service: TwitterService | None = None,
     gio_service: GioService | None = None,
 ) -> Flask:
+    settings = get_settings()
     init_db()
     app = Flask(__name__)
-    app.config["ENV"] = FLASK_ENV
+    app.config["ENV"] = settings.FLASK_ENV
 
-    CORS(app, origins=ALLOWED_ORIGINS)
+    CORS(app, origins=settings.ALLOWED_ORIGINS)
     Limiter(get_remote_address, app=app, default_limits=["120 per minute"], storage_uri="memory://")
     attach_security_headers(app)
     service = service or ChatService()

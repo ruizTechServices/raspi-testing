@@ -2,31 +2,23 @@ from __future__ import annotations
 
 from typing import Any
 
-from unified_server.config import (
-    TWITTER_ACCESS_TOKEN,
-    TWITTER_ACCESS_TOKEN_SECRET,
-    TWITTER_API_KEY,
-    TWITTER_API_SECRET,
-    TWITTER_BASE_URL,
-    TWITTER_BEARER_TOKEN,
-    TWITTER_TIMEOUT_SECONDS,
-    TWITTER_USER_ID,
-)
+from unified_server.settings import get_settings
 from unified_server.twitter_client import TwitterClient, TwitterClientConfig, TwitterClientConfigError, TwitterClientError
 
 
 class TwitterService:
     def __init__(self, client: TwitterClient | None = None) -> None:
+        settings = get_settings()
         self.client = client or TwitterClient(
             TwitterClientConfig(
-                api_key=TWITTER_API_KEY,
-                api_secret=TWITTER_API_SECRET,
-                access_token=TWITTER_ACCESS_TOKEN,
-                access_token_secret=TWITTER_ACCESS_TOKEN_SECRET,
-                bearer_token=TWITTER_BEARER_TOKEN,
-                user_id=TWITTER_USER_ID,
-                base_url=TWITTER_BASE_URL,
-                timeout_seconds=TWITTER_TIMEOUT_SECONDS,
+                api_key=settings.TWITTER_API_KEY,
+                api_secret=settings.TWITTER_API_SECRET,
+                access_token=settings.TWITTER_ACCESS_TOKEN,
+                access_token_secret=settings.TWITTER_ACCESS_TOKEN_SECRET,
+                bearer_token=settings.TWITTER_BEARER_TOKEN,
+                user_id=settings.TWITTER_USER_ID,
+                base_url=settings.TWITTER_BASE_URL,
+                timeout_seconds=settings.TWITTER_TIMEOUT_SECONDS,
             )
         )
 

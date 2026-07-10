@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from unified_server.config import ENABLE_MEMORY, MEMORY_TOP_K
 from unified_server.repository import SQLiteRepository
+from unified_server.settings import get_settings
 
 
 class MemoryService:
@@ -9,16 +9,17 @@ class MemoryService:
         self.repository = repository
 
     def build_memory_block(self, conversation_id: str) -> str:
-        if not ENABLE_MEMORY:
+        settings = get_settings()
+        if not settings.ENABLE_MEMORY:
             return ""
-        cells = self.repository.get_top_memory(conversation_id=conversation_id, limit=MEMORY_TOP_K)
+        cells = self.repository.get_top_memory(conversation_id=conversation_id, limit=settings.MEMORY_TOP_K)
         if not cells:
             return ""
         lines = [f"- [{cell.cell_type}] {cell.content}" for cell in cells]
         return "Relevant memory:\n" + "\n".join(lines)
 
     def remember_turn(self, conversation_id: str, user_text: str, assistant_text: str) -> None:
-        if not ENABLE_MEMORY:
+        if not get_settings().ENABLE_MEMORY:
             return
         user_clean = user_text.strip()
         assistant_clean = assistant_text.strip()

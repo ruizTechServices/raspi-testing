@@ -6,20 +6,8 @@ from typing import Any, Iterator
 
 from openai import OpenAI
 
-from unified_server.config import (
-    GIO_DEFAULT_MODEL,
-    GIO_DEFAULT_PROVIDER,
-    GIO_DREAM_MODEL,
-    GIO_DREAM_SOURCE_LIMIT,
-    GIO_RECALL_MIN_SCORE,
-    GIO_RECALL_TOP_K,
-    GIO_RECENT_MESSAGES_LIMIT,
-    GIO_SUMMARY_MODEL,
-    GIO_SUMMARY_TRIGGER_MESSAGES,
-    OPENAI_API_KEY,
-    OPENAI_EMBEDDING_MODEL,
-)
 from unified_server.gio_repository import GioDream, GioMessage, GioSupabaseRepository
+from unified_server.settings import get_settings
 from unified_server.providers import OPENAI_MODELS, ProviderRegistry
 from unified_server.service import DEFAULT_SYSTEM_PROMPT
 
@@ -28,7 +16,8 @@ class GioService:
     def __init__(self, repository: GioSupabaseRepository | None = None, providers: ProviderRegistry | None = None) -> None:
         self.repository = repository or GioSupabaseRepository()
         self.providers = providers or ProviderRegistry()
-        self.openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
+        api_key = get_settings().OPENAI_API_KEY
+        self.openai_client = OpenAI(api_key=api_key) if api_key else None
 
     def ensure_schema(self) -> None:
         self.repository.ensure_schema()
@@ -88,7 +77,7 @@ class GioService:
             conversation_id=conversation_id,
             title=title,
             content=content,
-            model=GIO_DREAM_MODEL,
+            model=get_settings().GIO_DREAM_MODEL,
             source_message_ids=selected_ids,
             embedding=self._embed(content),
         )
@@ -96,7 +85,7 @@ class GioService:
 
     def list_models(self, provider_name: str | None = None) -> dict[str, Any]:
         models = self._list_openai_models()
-        default_model = GIO_DEFAULT_MODEL if any(item["id"] == GIO_DEFAULT_MODEL for item in models) else (models[0]["id"] if models else GIO_DEFAULT_MODEL)
+        default_model = get_settings().GIO_DEFAULT_MODEL if any(item["id"] == get_settings().GIO_DEFAULT_MODEL for item in models) else (models[0]["id"] if models else get_settings().GIO_DEFAULT_MODEL)
         return {
             "provider": "openai",
             "default_model": default_model,
@@ -254,8 +243,8 @@ class GioService:
             raise ValueError("Message cannot be empty.")
 
         self._require_conversation(conversation_id)
-        provider_name = provider_name or GIO_DEFAULT_PROVIDER
-        model = model or GIO_DEFAULT_MODEL
+        provider_name = provider_name or get_settings().GIO_DEFAULT_PROVIDER
+        model = model or get_settings().GIO_DEFAULT_MODEL
         user_embedding = self._embed(cleaned)
         user_message = self.repository.add_message(
             conversation_id=conversation_id,
@@ -308,7 +297,7 @@ class GioService:
         all_messages = self.repository.get_messages(conversation_id)
         latest_summary = self.repository.get_latest_summary(conversation_id)
         conversation_messages = [item for item in all_messages if item.role in {"user", "assistant", "system"}]
-        recent_messages = conversation_messages[-GIO_RECENT_MESSAGES_LIMIT:]
+        recent_messages = conversation_messages[-get_settings().GIO_RECENT_MESSAGES_LIMIT:]
 
         prompt_messages = [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}]
         if latest_summary and latest_summary.content.strip():
@@ -331,7 +320,7 @@ class GioService:
         all_messages = self.repository.get_messages(conversation_id)
         visible_messages = [item for item in all_messages if item.role in {"user", "assistant", "system"}]
         latest_summary = self.repository.get_latest_summary(conversation_id)
-        recent_messages = visible_messages[-GIO_RECENT_MESSAGES_LIMIT:]
+        recent_messages = visible_messages[-get_settings().GIO_RECENT_MESSAGES_LIMIT:]
         recent_ids = {item.id for item in recent_messages}
         force_refresh = self._recent_messages_include_summary_worthy_update(recent_messages)
 
@@ -348,7 +337,7 @@ class GioService:
                 candidate_map[item.id] = item
             candidates = sorted(candidate_map.values(), key=lambda item: item.created_at)
 
-        if len(candidates) < GIO_SUMMARY_TRIGGER_MESSAGES and not force_refresh:
+        if len(candidates) < get_settings().GIO_SUMMARY_TRIGGER_MESSAGES and not force_refresh:
             return
 
         summary_text = self._summarize_messages(candidates, latest_summary.content if latest_summary else None)
@@ -361,7 +350,7 @@ class GioService:
         self.repository.save_summary(
             conversation_id=conversation_id,
             content=summary_text,
-            model=GIO_SUMMARY_MODEL,
+            model=get_settings().GIO_SUMMARY_MODEL,
             embedding=summary_embedding,
         )
 
@@ -385,7 +374,7 @@ class GioService:
 
         try:
             response = self.openai_client.responses.create(
-                model=GIO_SUMMARY_MODEL,
+                model=get_settings().GIO_SUMMARY_MODEL,
                 input=[{"role": "system", "content": "\n".join(prompt)}],
                 store=False,
             )
@@ -417,7 +406,7 @@ class GioService:
             if not item.embedding:
                 continue
             score = self._cosine_similarity(user_embedding, item.embedding)
-            if score >= GIO_RECALL_MIN_SCORE:
+            if score >= get_settings().GIO_RECALL_MIN_SCORE:
                 scored_candidates.append((score, item))
 
         if not scored_candidates:
@@ -432,7 +421,7 @@ class GioService:
             seen_snippets.add(fingerprint)
             target = user_matches if item.role == "user" else assistant_matches
             target.append(snippet)
-            if len(user_matches) + len(assistant_matches) >= GIO_RECALL_TOP_K:
+            if len(user_matches) + len(assistant_matches) >= get_settings().GIO_RECALL_TOP_K:
                 break
 
         if not user_matches and not assistant_matches:
@@ -519,7 +508,7 @@ class GioService:
         if not self.openai_client or not text.strip():
             return None
         try:
-            response = self.openai_client.embeddings.create(model=OPENAI_EMBEDDING_MODEL, input=text)
+            response = self.openai_client.embeddings.create(model=get_settings().OPENAI_EMBEDDING_MODEL, input=text)
             return list(response.data[0].embedding)
         except Exception:
             return None
@@ -586,7 +575,7 @@ class GioService:
                 continue
             selected.append(item)
             seen_ids.add(item.id)
-            if len(selected) >= GIO_DREAM_SOURCE_LIMIT:
+            if len(selected) >= get_settings().GIO_DREAM_SOURCE_LIMIT:
                 return sorted(selected, key=lambda entry: entry.created_at)
 
         scored: list[tuple[float, GioMessage]] = []
@@ -601,7 +590,7 @@ class GioService:
                 continue
             selected.append(item)
             seen_ids.add(item.id)
-            if len(selected) >= GIO_DREAM_SOURCE_LIMIT:
+            if len(selected) >= get_settings().GIO_DREAM_SOURCE_LIMIT:
                 break
         return sorted(selected, key=lambda item: item.created_at)
 
@@ -642,7 +631,7 @@ class GioService:
         prompt.extend(transcript_lines)
 
         response = self.openai_client.responses.create(
-            model=GIO_DREAM_MODEL,
+            model=get_settings().GIO_DREAM_MODEL,
             input=[{"role": "system", "content": "\n".join(prompt)}],
             store=False,
         )

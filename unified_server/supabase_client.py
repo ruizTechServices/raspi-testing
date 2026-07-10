@@ -4,7 +4,7 @@ from typing import Any
 
 import requests
 
-from unified_server.config import SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL
+from unified_server.settings import get_settings
 
 
 class SupabaseConfigError(Exception):
@@ -17,8 +17,9 @@ class SupabaseRequestError(Exception):
 
 class SupabaseRestClient:
     def __init__(self, base_url: str | None = None, service_role_key: str | None = None) -> None:
-        self.base_url = (base_url or SUPABASE_URL).rstrip("/")
-        self.service_role_key = service_role_key or SUPABASE_SERVICE_ROLE_KEY
+        settings = get_settings()
+        self.base_url = (base_url or settings.SUPABASE_URL).rstrip("/")
+        self.service_role_key = service_role_key or settings.SUPABASE_SERVICE_ROLE_KEY
         if not self.base_url or not self.service_role_key:
             raise SupabaseConfigError("Supabase URL/service role key is not configured.")
 

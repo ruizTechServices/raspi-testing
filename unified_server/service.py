@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from dataclasses import asdict
 
-from unified_server.config import DEFAULT_MODEL, DEFAULT_PROVIDER
 from unified_server.memory import MemoryService
 from unified_server.providers import ProviderRegistry
 from unified_server.repository import SQLiteRepository
+from unified_server.settings import get_settings
 
 
 DEFAULT_SYSTEM_PROMPT = (
@@ -48,8 +48,9 @@ class ChatService:
 
         self._require_conversation(conversation_id)
 
-        provider_name = provider_name or DEFAULT_PROVIDER
-        model = model or DEFAULT_MODEL
+        settings = get_settings()
+        provider_name = provider_name or settings.DEFAULT_PROVIDER
+        model = model or settings.DEFAULT_MODEL
 
         self.repository.add_message(
             conversation_id=conversation_id,
