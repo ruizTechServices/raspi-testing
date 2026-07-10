@@ -42,6 +42,11 @@ using **buttons and simple interfaces**, not chat UIs (see README).
 
 ## Priority 2 — Dream Mode substance (carried over, still in progress)
 
+- [x] Dream storage fixed 2026-07-09: `gio_dream_entries` was missing from the
+      razzy-db Supabase project (schema applied via SQL editor from
+      supabase_gio_schema.sql). /gio/dreams now loads; entries can be generated
+      per conversation via POST /api/gio/conversations/<id>/dream.
+
 - [ ] Define the dream input set / output contract more rigorously.
 - [ ] Guardrails against self-referential dreams (dreams feeding on dreams).
 - [ ] Clustering / retrieval pass over dream embeddings.
