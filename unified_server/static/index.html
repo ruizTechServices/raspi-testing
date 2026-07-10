@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/static/app.css?v=20260505-dashboard2" />
   <script defer src="/static/nav.js"></script>
   <script defer src="/static/dashboard.js?v=20260505-dashboard2"></script>
+  <script defer src="/static/widgets.js?v=20260709-widgets1"></script>
 </head>
 <body>
   <main class="page-shell dashboard-shell dashboard-shell-refined">
@@ -124,6 +125,92 @@
           <div class="empty-state">Loading chats...</div>
         </div>
       </aside>
+    </section>
+
+    <section class="panel dashboard-widgets-card">
+      <div class="dashboard-card-header">
+        <div>
+          <div class="dashboard-card-title">World Snapshot</div>
+          <div class="dashboard-card-subtitle">Weather, network, markets, currency, and space — free public APIs, proxied and cached by the Pi.</div>
+        </div>
+        <button id="widgetsRefreshBtn" class="dashboard-inline-action" type="button">Refresh</button>
+      </div>
+
+      <div class="dashboard-widgets-grid">
+        <section class="dashboard-widget" aria-live="polite">
+          <div class="dashboard-section-label-row">
+            <div class="dashboard-section-label">Weather</div>
+            <div class="dashboard-status-pill neutral" id="weatherLocationPill">--</div>
+          </div>
+          <div class="dashboard-metric-large" id="weatherTemp">--</div>
+          <div class="dashboard-muted" id="weatherMeta">Loading weather...</div>
+          <div class="dashboard-stack" id="weatherForecast"></div>
+        </section>
+
+        <section class="dashboard-widget" aria-live="polite">
+          <div class="dashboard-section-label-row">
+            <div class="dashboard-section-label">Network</div>
+            <button id="publicIpRefreshBtn" class="dashboard-inline-action" type="button">Check IP</button>
+          </div>
+          <div class="dashboard-metric-medium" id="publicIpValue">--</div>
+          <div class="dashboard-muted" id="publicIpMeta">The Pi's public WAN address, via ipify.</div>
+        </section>
+
+        <section class="dashboard-widget" aria-live="polite">
+          <div class="dashboard-section-label-row">
+            <div class="dashboard-section-label">Crypto</div>
+            <div class="dashboard-status-pill neutral">USD</div>
+          </div>
+          <div class="dashboard-stack" id="cryptoList">
+            <div class="empty-state">Loading prices...</div>
+          </div>
+          <div class="dashboard-muted" id="cryptoMeta">Spot prices via CoinGecko.</div>
+        </section>
+
+        <section class="dashboard-widget">
+          <div class="dashboard-section-label-row">
+            <div class="dashboard-section-label">Currency</div>
+            <div class="dashboard-status-pill neutral">ECB</div>
+          </div>
+          <form id="currencyForm" class="widget-form">
+            <input id="currencyAmount" class="widget-input" type="number" min="0.01" step="0.01" value="100" aria-label="Amount" />
+            <select id="currencyFrom" class="widget-input" aria-label="From currency">
+              <option value="USD" selected>USD</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+              <option value="JPY">JPY</option>
+              <option value="MXN">MXN</option>
+              <option value="DOP">DOP</option>
+              <option value="CAD">CAD</option>
+            </select>
+            <span class="widget-form-arrow" aria-hidden="true">→</span>
+            <select id="currencyTo" class="widget-input" aria-label="To currency">
+              <option value="EUR" selected>EUR</option>
+              <option value="USD">USD</option>
+              <option value="GBP">GBP</option>
+              <option value="JPY">JPY</option>
+              <option value="MXN">MXN</option>
+              <option value="DOP">DOP</option>
+              <option value="CAD">CAD</option>
+            </select>
+            <button id="currencyConvertBtn" class="dashboard-inline-action" type="submit">Convert</button>
+          </form>
+          <div class="dashboard-metric-medium" id="currencyResult">--</div>
+          <div class="dashboard-muted" id="currencyMeta">Reference rates via Frankfurter.</div>
+        </section>
+
+        <section class="dashboard-widget dashboard-widget-apod" aria-live="polite">
+          <div class="dashboard-section-label-row">
+            <div class="dashboard-section-label">NASA Picture of the Day</div>
+            <div class="dashboard-status-pill neutral" id="apodDatePill">--</div>
+          </div>
+          <a id="apodLink" href="#" target="_blank" rel="noopener">
+            <img id="apodImage" class="apod-image" alt="NASA Astronomy Picture of the Day" hidden />
+          </a>
+          <div class="dashboard-list-title" id="apodTitle">Loading...</div>
+          <div class="dashboard-muted" id="apodMeta"></div>
+        </section>
+      </div>
     </section>
 
     <section class="panel dashboard-activity-card">
