@@ -25,18 +25,20 @@ using **buttons and simple interfaces**, not chat UIs (see README).
 
 ## Priority 1 — security hygiene
 
-- [ ] **Rotate `API_KEY` now.** The live key is still the `change-me` default
-      (test_gio_api proved it against the real `.env`), and the public pages
-      even ship `change-me` as the localStorage fallback. Set a strong value
-      in `.env`, restart the service, then update `razzy_api_key` in
+- [ ] **Rotate `API_KEY`.** The live key is the `change-me` default and the
+      public pages ship it as the localStorage fallback — anyone who guesses
+      it can use the authed endpoints (incl. Ollama systemctl control and
+      Twitter posting). Gio explicitly chose to keep `change-me` for now
+      (2026-07-09); revisit when rotating the other secrets. To rotate: set a
+      strong value in `.env`, restart the service, update `razzy_api_key` in
       localStorage on your devices.
 - [ ] Rotate OpenAI / Anthropic / Supabase service-role / Twitter secrets
       (carried over from the old list; still pending).
 - [ ] Consider refusing to start (or loudly warning) in production when
       `API_KEY` is empty — the empty-key auth bypass is dev-only behavior.
-- [ ] Audit `data/chat.db` and delete the junk conversations left by the
-      old test-isolation bug ('Chat Test', 'Test Chat', 'Empty Chat',
-      'Allowed', stray 'New Chat' rows from 2026-05-06 and earlier runs).
+- [x] Audit `data/chat.db` and delete the junk conversations left by the
+      old test-isolation bug — done 2026-07-09: purged 10 junk conversations
+      + 8 orphaned memory cells, vacuumed; only real data remains.
 
 ## Priority 2 — Dream Mode substance (carried over, still in progress)
 
