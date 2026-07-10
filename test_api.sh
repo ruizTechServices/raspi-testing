@@ -18,5 +18,5 @@ printf '\n== chat ==\n'
 curl -s -X POST "$BASE_URL/api/chat" \
   -H "Content-Type: application/json" \
   -H "X-API-Key: $API_KEY" \
-  -d "{\"conversation_id\":\"$CID\",\"message\":\"Say hello in one sentence\",\"provider\":\"openai\"}"
+  -d "{\"conversation_id\":\"$CID\",\"message\":\"Say hello in one sentence\",\"provider\":\"openai\",\"model\":\"gpt-4.1-mini\"}"
 printf '\n'
