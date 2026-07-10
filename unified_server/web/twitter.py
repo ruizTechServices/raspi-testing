@@ -3,7 +3,7 @@ from __future__ import annotations
 from flask import Blueprint, jsonify, request
 
 from unified_server.security import require_api_key
-from unified_server.twitter_service import TwitterClientConfigError, TwitterClientError
+from unified_server.twitter.service import TwitterClientConfigError, TwitterClientError
 
 
 def build_twitter_blueprint(twitter_service) -> Blueprint:

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from unified_server.settings import get_settings
-from unified_server.twitter_client import TwitterClient, TwitterClientConfig, TwitterClientConfigError, TwitterClientError
+from unified_server.twitter.client import TwitterClient, TwitterClientConfig, TwitterClientConfigError, TwitterClientError
 
 
 class TwitterService:

@@ -6,12 +6,12 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
 from unified_server.chat.database import init_db
-from unified_server.gio_service import GioService
+from unified_server.gio.service import GioService
 from unified_server.razzy.service import RazzyService
 from unified_server.security import attach_security_headers
 from unified_server.chat.service import ChatService
 from unified_server.settings import get_settings
-from unified_server.twitter_service import TwitterService
+from unified_server.twitter.service import TwitterService
 from unified_server.web import register_blueprints
 
 

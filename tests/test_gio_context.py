@@ -3,8 +3,8 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 from unified_server.settings import get_settings
-from unified_server.gio_repository import GioConversation, GioDream, GioMessage, GioSummary
-from unified_server.gio_service import GioService
+from unified_server.gio.repository import GioConversation, GioDream, GioMessage, GioSummary
+from unified_server.gio.service import GioService
 
 
 class FakeProvider:

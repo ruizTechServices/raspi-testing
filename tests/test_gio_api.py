@@ -6,7 +6,7 @@ from unified_server.app_factory import create_app
 from unified_server.razzy.service import RazzyService
 from unified_server.chat.service import ChatService
 from unified_server.settings import get_settings
-from unified_server.twitter_service import TwitterService
+from unified_server.twitter.service import TwitterService
 
 
 @pytest.fixture(autouse=True)

@@ -80,9 +80,6 @@ class TwitterClient:
     def _write_headers(self) -> dict[str, str]:
         return {"Content-Type": "application/json"}
 
-    def _bearer_headers(self) -> dict[str, str]:
-        return {"Authorization": f"Bearer {self.config.bearer_token}", "Content-Type": "application/json"}
-
     def _has_oauth1_credentials(self) -> bool:
         return all(
             [
@@ -92,10 +89,6 @@ class TwitterClient:
                 self.config.access_token_secret,
             ]
         )
-
-    def _ensure_bearer_token(self, message: str) -> None:
-        if not self.config.bearer_token:
-            raise TwitterClientConfigError(message)
 
     def _ensure_user_context_credentials(self) -> None:
         if self._has_oauth1_credentials():

@@ -6,8 +6,9 @@ import json
 from typing import Any
 from uuid import uuid4
 
+from unified_server.core.conversations import derive_auto_title
 from unified_server.settings import get_settings
-from unified_server.supabase_client import SupabaseRequestError, SupabaseRestClient
+from unified_server.gio.supabase_client import SupabaseRequestError, SupabaseRestClient
 
 
 @dataclass(slots=True)
@@ -376,9 +377,7 @@ class GioSupabaseRepository:
         title = rows[0].get("title", "")
         if title != "New Chat":
             return
-        cleaned = " ".join(content.strip().split())[:60]
-        if len(content.strip()) > 60:
-            cleaned += "..."
+        cleaned = derive_auto_title(content)
         if cleaned:
             self.client.update(
                 self.conversations_table,
