@@ -79,6 +79,6 @@ def build_chat_blueprint(service) -> Blueprint:
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
         except Exception as exc:
-            return jsonify({"error": str(exc)}), 502
+            return jsonify({"error": str(exc)}), 503
 
     return bp

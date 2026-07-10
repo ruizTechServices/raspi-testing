@@ -32,8 +32,11 @@ def systemctl_ollama(action: str) -> dict[str, object]:
 
     if action == "status":
         active = stdout == "active"
+        # `systemctl is-active` exits non-zero for any non-active state, but a
+        # definitive answer (active/inactive/failed/...) is still a successful
+        # status query — only an empty result means the query itself failed.
         return {
-            "ok": result.returncode == 0,
+            "ok": bool(stdout),
             "action": action,
             "service_state": stdout or "unknown",
             "detail": "Ollama service is active." if active else f"Ollama service state: {stdout or 'unknown' }.",

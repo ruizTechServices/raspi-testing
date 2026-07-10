@@ -79,12 +79,12 @@ def test_weather_endpoint_returns_snapshot():
     assert body["daily"][0]["conditions"] == "Slight rain"
 
 
-def test_weather_endpoint_maps_upstream_failure_to_502():
+def test_weather_endpoint_maps_upstream_failure_to_503():
     client = build_client(weather=WeatherClient(http=FailingHttp()))
 
     response = client.get("/api/integrations/weather")
 
-    assert response.status_code == 502
+    assert response.status_code == 503
     assert "unavailable" in response.get_json()["error"].lower()
 
 

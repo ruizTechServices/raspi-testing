@@ -48,7 +48,7 @@ def test_system_temperature_classifies_warm_values():
     assert payload['temperature_f'] == 163.8
 
 
-def test_system_temperature_returns_502_when_sensor_read_fails(client, monkeypatch):
+def test_system_temperature_returns_503_when_sensor_read_fails(client, monkeypatch):
     def fake_read() -> float:
         raise RuntimeError('sensor missing')
 
@@ -56,7 +56,7 @@ def test_system_temperature_returns_502_when_sensor_read_fails(client, monkeypat
 
     response = client.get('/api/system/temperature')
 
-    assert response.status_code == 502
+    assert response.status_code == 503
     assert 'Unable to read Pi temperature' in response.get_json()['error']
 
 
@@ -109,7 +109,7 @@ def test_ollama_control_runs_real_action(client, auth_headers, monkeypatch):
     assert payload['service_state'] == 'inactive'
 
 
-def test_ollama_control_returns_502_when_command_fails(client, auth_headers, monkeypatch):
+def test_ollama_control_returns_503_when_command_fails(client, auth_headers, monkeypatch):
     responses = iter([
         subprocess.CompletedProcess(args=['systemctl', 'start', 'ollama'], returncode=1, stdout='', stderr='permission denied\n'),
         subprocess.CompletedProcess(args=['systemctl', 'is-active', 'ollama'], returncode=3, stdout='inactive\n', stderr=''),
@@ -119,7 +119,7 @@ def test_ollama_control_returns_502_when_command_fails(client, auth_headers, mon
 
     response = client.post('/api/system/ollama/control', headers=auth_headers, json={'action': 'start'})
 
-    assert response.status_code == 502
+    assert response.status_code == 503
     payload = response.get_json()
     assert payload['status'] == 'error'
     assert payload['action'] == 'start'

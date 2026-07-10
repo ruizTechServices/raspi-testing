@@ -82,7 +82,7 @@ Live posting is still gated by X-side API enrollment, not local code.
 | `GET /api/integrations/apod` | [NASA APOD](https://api.nasa.gov) — works out of the box with `DEMO_KEY`. |
 
 Responses are cached server-side (2 min – 6 h per source) to stay polite to
-the free APIs. Upstream failures return `502` with a friendly error.
+the free APIs. Upstream failures return `503` with a friendly JSON error (503 instead of 502 because Cloudflare replaces origin 502 bodies with its own error page, which would hide the message).
 
 ## Setup
 

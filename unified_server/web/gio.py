@@ -28,7 +28,7 @@ def build_gio_blueprint(gio_service) -> Blueprint:
             conversation = gio_service.create_conversation(title=title)
             return jsonify(conversation)
         except Exception as exc:
-            return jsonify({"error": str(exc)}), 502
+            return jsonify({"error": str(exc)}), 503
 
     @bp.get("/api/gio/conversations")
     @require_api_key
@@ -37,7 +37,7 @@ def build_gio_blueprint(gio_service) -> Blueprint:
             gio_service.ensure_schema()
             return jsonify({"conversations": gio_service.list_conversations()})
         except Exception as exc:
-            return jsonify({"error": str(exc)}), 502
+            return jsonify({"error": str(exc)}), 503
 
     @bp.get("/api/gio/conversations/<conversation_id>/messages")
     @require_api_key
@@ -48,7 +48,7 @@ def build_gio_blueprint(gio_service) -> Blueprint:
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
         except Exception as exc:
-            return jsonify({"error": str(exc)}), 502
+            return jsonify({"error": str(exc)}), 503
 
     @bp.patch("/api/gio/conversations/<conversation_id>")
     @require_api_key
@@ -61,7 +61,7 @@ def build_gio_blueprint(gio_service) -> Blueprint:
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
         except Exception as exc:
-            return jsonify({"error": str(exc)}), 502
+            return jsonify({"error": str(exc)}), 503
 
     @bp.delete("/api/gio/conversations/<conversation_id>")
     @require_api_key
@@ -73,7 +73,7 @@ def build_gio_blueprint(gio_service) -> Blueprint:
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
         except Exception as exc:
-            return jsonify({"error": str(exc)}), 502
+            return jsonify({"error": str(exc)}), 503
 
     @bp.get("/api/gio/dreams")
     @require_api_key
@@ -85,7 +85,7 @@ def build_gio_blueprint(gio_service) -> Blueprint:
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
         except Exception as exc:
-            return jsonify({"error": str(exc)}), 502
+            return jsonify({"error": str(exc)}), 503
 
     @bp.get("/api/gio/dreams/<dream_id>")
     @require_api_key
@@ -96,7 +96,7 @@ def build_gio_blueprint(gio_service) -> Blueprint:
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
         except Exception as exc:
-            return jsonify({"error": str(exc)}), 502
+            return jsonify({"error": str(exc)}), 503
 
     @bp.post("/api/gio/conversations/<conversation_id>/dream")
     @require_api_key
@@ -107,7 +107,7 @@ def build_gio_blueprint(gio_service) -> Blueprint:
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
         except Exception as exc:
-            return jsonify({"error": str(exc)}), 502
+            return jsonify({"error": str(exc)}), 503
 
     @bp.post("/api/gio/chat")
     @require_api_key
@@ -125,7 +125,7 @@ def build_gio_blueprint(gio_service) -> Blueprint:
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
         except Exception as exc:
-            return jsonify({"error": str(exc)}), 502
+            return jsonify({"error": str(exc)}), 503
 
     @bp.post("/api/gio/chat/stream")
     @require_api_key

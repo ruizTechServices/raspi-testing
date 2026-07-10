@@ -24,7 +24,7 @@ def build_twitter_blueprint(twitter_service) -> Blueprint:
         except TwitterClientConfigError as exc:
             return jsonify({"error": str(exc)}), 400
         except TwitterClientError as exc:
-            return jsonify({"error": str(exc)}), 502
+            return jsonify({"error": str(exc)}), 503
 
     @bp.get("/api/twitter/posts/<post_id>")
     @require_api_key
@@ -36,7 +36,7 @@ def build_twitter_blueprint(twitter_service) -> Blueprint:
         except TwitterClientConfigError as exc:
             return jsonify({"error": str(exc)}), 400
         except TwitterClientError as exc:
-            return jsonify({"error": str(exc)}), 502
+            return jsonify({"error": str(exc)}), 503
 
     @bp.get("/api/twitter/timeline/user/<user_id>")
     @require_api_key
@@ -49,7 +49,7 @@ def build_twitter_blueprint(twitter_service) -> Blueprint:
         except TwitterClientConfigError as exc:
             return jsonify({"error": str(exc)}), 400
         except TwitterClientError as exc:
-            return jsonify({"error": str(exc)}), 502
+            return jsonify({"error": str(exc)}), 503
 
     @bp.post("/api/twitter/post")
     @require_api_key
@@ -63,7 +63,7 @@ def build_twitter_blueprint(twitter_service) -> Blueprint:
         except TwitterClientConfigError as exc:
             return jsonify({"error": str(exc)}), 400
         except TwitterClientError as exc:
-            return jsonify({"error": str(exc)}), 502
+            return jsonify({"error": str(exc)}), 503
 
     @bp.post("/api/twitter/posts/<post_id>/reply")
     @require_api_key
@@ -77,7 +77,7 @@ def build_twitter_blueprint(twitter_service) -> Blueprint:
         except TwitterClientConfigError as exc:
             return jsonify({"error": str(exc)}), 400
         except TwitterClientError as exc:
-            return jsonify({"error": str(exc)}), 502
+            return jsonify({"error": str(exc)}), 503
 
     @bp.post("/api/twitter/posts/<post_id>/quote")
     @require_api_key
@@ -91,7 +91,7 @@ def build_twitter_blueprint(twitter_service) -> Blueprint:
         except TwitterClientConfigError as exc:
             return jsonify({"error": str(exc)}), 400
         except TwitterClientError as exc:
-            return jsonify({"error": str(exc)}), 502
+            return jsonify({"error": str(exc)}), 503
 
     @bp.delete("/api/twitter/posts/<post_id>")
     @require_api_key
@@ -103,6 +103,6 @@ def build_twitter_blueprint(twitter_service) -> Blueprint:
         except TwitterClientConfigError as exc:
             return jsonify({"error": str(exc)}), 400
         except TwitterClientError as exc:
-            return jsonify({"error": str(exc)}), 502
+            return jsonify({"error": str(exc)}), 503
 
     return bp

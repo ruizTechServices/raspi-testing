@@ -36,21 +36,21 @@ def build_integrations_blueprint(
         try:
             return jsonify({"status": "ok", **weather.snapshot()})
         except IntegrationError as exc:
-            return jsonify({"error": f"Weather is unavailable: {exc}"}), 502
+            return jsonify({"error": f"Weather is unavailable: {exc}"}), 503
 
     @bp.get("/api/integrations/network/public-ip")
     def integrations_public_ip():
         try:
             return jsonify({"status": "ok", **network.public_ip()})
         except IntegrationError as exc:
-            return jsonify({"error": f"Public IP lookup failed: {exc}"}), 502
+            return jsonify({"error": f"Public IP lookup failed: {exc}"}), 503
 
     @bp.get("/api/integrations/crypto/prices")
     def integrations_crypto_prices():
         try:
             return jsonify({"status": "ok", **crypto.prices()})
         except IntegrationError as exc:
-            return jsonify({"error": f"Crypto prices are unavailable: {exc}"}), 502
+            return jsonify({"error": f"Crypto prices are unavailable: {exc}"}), 503
 
     @bp.get("/api/integrations/currency/convert")
     def integrations_currency_convert():
@@ -64,13 +64,13 @@ def build_integrations_blueprint(
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
         except IntegrationError as exc:
-            return jsonify({"error": f"Currency conversion is unavailable: {exc}"}), 502
+            return jsonify({"error": f"Currency conversion is unavailable: {exc}"}), 503
 
     @bp.get("/api/integrations/apod")
     def integrations_apod():
         try:
             return jsonify({"status": "ok", **apod.picture_of_the_day()})
         except IntegrationError as exc:
-            return jsonify({"error": f"NASA picture of the day is unavailable: {exc}"}), 502
+            return jsonify({"error": f"NASA picture of the day is unavailable: {exc}"}), 503
 
     return bp
