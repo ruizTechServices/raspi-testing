@@ -52,7 +52,7 @@ class FakeGioRepository:
     def conversation_exists(self, conversation_id: str) -> bool:
         return conversation_id in self.conversations
 
-    def get_messages(self, conversation_id: str) -> list[GioMessage]:
+    def get_messages(self, conversation_id: str, include_embeddings: bool = True) -> list[GioMessage]:
         return [item for item in self.messages if item.conversation_id == conversation_id]
 
     def add_message(

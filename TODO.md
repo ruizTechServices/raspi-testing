@@ -49,7 +49,11 @@ using **buttons and simple interfaces**, not chat UIs (see README).
 
 - [ ] Define the dream input set / output contract more rigorously.
 - [ ] Guardrails against self-referential dreams (dreams feeding on dreams).
-- [ ] Clustering / retrieval pass over dream embeddings.
+- [x] Retrieval pass over dream embeddings — done 2026-07-09: occasional
+      associative dream recall during chat (top-K most similar dreams to the
+      current thought, `GIO_DREAM_RECALL_*` settings) via stateless
+      `top_k_similar` in gio/embeddings.py. Clustering still open.
+- [ ] Clustering over dream embeddings (group recurring themes).
 - [ ] Trigger conditions (idle timer / cron / heartbeat) + token/cost limits.
 - [ ] Edit / revision-history semantics for dream entries.
 

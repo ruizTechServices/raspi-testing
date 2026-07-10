@@ -30,7 +30,7 @@ class SummaryMaintainer:
 
     def maybe_update_rolling_summary(self, conversation_id: str) -> None:
         settings = get_settings()
-        all_messages = self.repository.get_messages(conversation_id)
+        all_messages = self.repository.get_messages(conversation_id, include_embeddings=False)
         visible_messages = [item for item in all_messages if item.role in {"user", "assistant", "system"}]
         latest_summary = self.repository.get_latest_summary(conversation_id)
         recent_messages = visible_messages[-settings.GIO_RECENT_MESSAGES_LIMIT:]

@@ -76,6 +76,10 @@ class Settings:
     GIO_SUMMARY_MODEL: str = "gpt-4.1-mini"
     GIO_DREAM_MODEL: str = "gpt-4.1-mini"
     GIO_DREAM_SOURCE_LIMIT: int = 8
+    GIO_DREAM_RECALL_ENABLED: bool = True
+    GIO_DREAM_RECALL_TOP_K: int = 5
+    GIO_DREAM_RECALL_MIN_SCORE: float = 0.25
+    GIO_DREAM_RECALL_PROBABILITY: float = 0.25
 
     # Local memory cells
     ENABLE_MEMORY: bool = True
@@ -140,6 +144,10 @@ class Settings:
             GIO_SUMMARY_MODEL=summary_model,
             GIO_DREAM_MODEL=os.getenv("GIO_DREAM_MODEL", summary_model),
             GIO_DREAM_SOURCE_LIMIT=int(os.getenv("GIO_DREAM_SOURCE_LIMIT", "8")),
+            GIO_DREAM_RECALL_ENABLED=_env_bool("GIO_DREAM_RECALL_ENABLED", "true"),
+            GIO_DREAM_RECALL_TOP_K=int(os.getenv("GIO_DREAM_RECALL_TOP_K", "5")),
+            GIO_DREAM_RECALL_MIN_SCORE=float(os.getenv("GIO_DREAM_RECALL_MIN_SCORE", "0.25")),
+            GIO_DREAM_RECALL_PROBABILITY=float(os.getenv("GIO_DREAM_RECALL_PROBABILITY", "0.25")),
             ENABLE_MEMORY=_env_bool("ENABLE_MEMORY", "true"),
             MEMORY_TOP_K=int(os.getenv("MEMORY_TOP_K", "5")),
             NASA_API_KEY=os.getenv("NASA_API_KEY", "DEMO_KEY"),

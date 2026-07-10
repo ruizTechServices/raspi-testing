@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Callable
 
-from unified_server.gio.embeddings import cosine_similarity
+from unified_server.gio.embeddings import cosine_similarity, top_k_similar
 from unified_server.gio.heuristics import message_is_correction_like, truncate_content
 from unified_server.gio.repository import GioDream, GioMessage, GioSupabaseRepository
 from unified_server.settings import get_settings
@@ -51,6 +51,27 @@ class DreamGenerator:
             model=get_settings().GIO_DREAM_MODEL,
             source_message_ids=selected_ids,
             embedding=self._embed(content),
+        )
+
+    def recall_similar_dreams(self, query_embedding: list[float] | None) -> list[tuple[float, GioDream]]:
+        """Associative dream recall: the top-k dreams (across ALL conversations)
+        most similar to the current thought process, best-first.
+
+        Reflection is best-effort — any storage problem yields an empty list
+        rather than an error, so it can never break a chat turn.
+        """
+        settings = get_settings()
+        if not query_embedding:
+            return []
+        try:
+            dreams = self.repository.list_dreams()
+        except Exception:
+            return []
+        return top_k_similar(
+            query_embedding,
+            ((dream, dream.embedding) for dream in dreams),
+            k=settings.GIO_DREAM_RECALL_TOP_K,
+            min_score=settings.GIO_DREAM_RECALL_MIN_SCORE,
         )
 
     def select_dream_sources(self, messages: list[GioMessage]) -> list[GioMessage]:

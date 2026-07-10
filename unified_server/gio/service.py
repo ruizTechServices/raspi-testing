@@ -59,6 +59,7 @@ class GioService:
             get_client,
             embed=embed,
             on_assistant_stored=lambda conversation_id: self._maybe_update_rolling_summary(conversation_id),
+            recall_dreams=lambda query_embedding: self._recall_similar_dreams(query_embedding),
         )
 
     # -- schema / conversations -------------------------------------------------
@@ -87,7 +88,7 @@ class GioService:
         self._require_conversation(conversation_id)
         return [
             self.serialize_message(item)
-            for item in self.repository.get_messages(conversation_id)
+            for item in self.repository.get_messages(conversation_id, include_embeddings=False)
             if item.role != "summary"
         ]
 
@@ -154,6 +155,9 @@ class GioService:
 
     def _maybe_update_rolling_summary(self, conversation_id: str) -> None:
         self._summaries.maybe_update_rolling_summary(conversation_id)
+
+    def _recall_similar_dreams(self, query_embedding: list[float] | None):
+        return self._dreams.recall_similar_dreams(query_embedding)
 
     def _extract_reasoning_from_response(self, response: Any) -> str | None:
         return extract_reasoning_from_response(response)

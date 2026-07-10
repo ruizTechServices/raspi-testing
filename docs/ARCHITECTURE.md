@@ -86,7 +86,17 @@ routes at 120 req/min (in-memory).
    legacy fallback to hidden `role="summary"` message rows).
 4. **Dream Mode** (`gio/dreams.py`): on demand, a reflection entry is
    generated from selected sources (recent + correction-like + high-priority
-   older messages) and stored in `gio_dream_entries`.
+   older messages) and stored in `gio_dream_entries` with its own embedding.
+5. **Dream recall / reflection** (`gio/chat.py::_build_dream_reflection_block`):
+   while assembling the prompt, with probability `GIO_DREAM_RECALL_PROBABILITY`
+   the current user-message embedding is matched against every stored dream
+   (across all conversations) and the `GIO_DREAM_RECALL_TOP_K` most similar
+   above `GIO_DREAM_RECALL_MIN_SCORE` are injected as the assistant's own
+   remembered impressions — associative rather than random. Retrieval is
+   best-effort: any storage failure silently skips the block so chat never
+   breaks. The similarity primitives live in `gio/embeddings.py`:
+   `cosine_similarity` (stateless, single-pass) and `top_k_similar`
+   (stateless streaming top-k with an O(k) bounded heap).
 
 ## How to add a feature
 

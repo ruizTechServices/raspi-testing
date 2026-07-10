@@ -122,6 +122,10 @@ Highlights:
 - `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `OLLAMA_BASE_URL`, `OLLAMA_MODEL`.
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `GIO_*` — Gio storage and
   memory tuning (see `supabase_gio_schema.sql` for the schema).
+- `GIO_DREAM_RECALL_*` — occasional associative reflection during Gio chat:
+  with probability `GIO_DREAM_RECALL_PROBABILITY` (default 0.25) the
+  `GIO_DREAM_RECALL_TOP_K` (default 5) dreams most similar to the current
+  message are recalled into context as Gio's own past reflections.
 - `TWITTER_*` — OAuth 1.0a credentials for X.
 - `NASA_API_KEY`, `WEATHER_LATITUDE`/`WEATHER_LONGITUDE`/`WEATHER_LOCATION_NAME`,
   `CRYPTO_COINS`, `CURRENCY_DEFAULT_BASE` — World Snapshot widgets.

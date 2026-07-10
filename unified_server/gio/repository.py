@@ -124,11 +124,16 @@ class GioSupabaseRepository:
             returning="minimal",
         )
 
-    def get_messages(self, conversation_id: str) -> list[GioMessage]:
+    def get_messages(self, conversation_id: str, include_embeddings: bool = True) -> list[GioMessage]:
+        # Embeddings are 1536 floats per message; skip the column entirely for
+        # callers that never read them (UI listing, summary maintenance).
+        columns = "id,conversation_id,role,content,provider,model,thinking_content,created_at"
+        if include_embeddings:
+            columns = "id,conversation_id,role,content,provider,model,thinking_content,embedding,created_at"
         rows = self.client.select(
             self.messages_table,
             query={
-                "select": "id,conversation_id,role,content,provider,model,thinking_content,embedding,created_at",
+                "select": columns,
                 "conversation_id": f"eq.{conversation_id}",
                 "order": "created_at.asc",
             },

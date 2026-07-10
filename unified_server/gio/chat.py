@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import random
 from typing import Any, Callable, Iterator
 
 from unified_server.core.conversations import require_conversation
 from unified_server.core.prompts import DEFAULT_SYSTEM_PROMPT
+from unified_server.gio.heuristics import truncate_content
 from unified_server.gio.recall import build_recall_block
-from unified_server.gio.repository import GioMessage, GioSupabaseRepository
+from unified_server.gio.repository import GioDream, GioMessage, GioSupabaseRepository
 from unified_server.gio.serialization import serialize_message
 from unified_server.settings import get_settings
 
@@ -42,12 +44,16 @@ class GioChatOrchestrator:
         *,
         embed: Callable[[str], list[float] | None],
         on_assistant_stored: Callable[[str], None],
+        recall_dreams: Callable[[list[float] | None], list[tuple[float, GioDream]]] | None = None,
+        rng: Callable[[], float] = random.random,
     ) -> None:
         self.repository = repository
         self.providers = providers
         self._get_client = get_client
         self._embed = embed
         self._on_assistant_stored = on_assistant_stored
+        self._recall_dreams = recall_dreams
+        self._rng = rng
 
     def chat_once(
         self,
@@ -250,5 +256,32 @@ class GioChatOrchestrator:
         if recall_block:
             prompt_messages.append({"role": "system", "content": recall_block})
 
+        dream_block = self._build_dream_reflection_block(user_embedding)
+        if dream_block:
+            prompt_messages.append({"role": "system", "content": dream_block})
+
         prompt_messages.extend({"role": item.role, "content": item.content} for item in recent_messages)
         return prompt_messages
+
+    def _build_dream_reflection_block(self, user_embedding: list[float] | None) -> str | None:
+        """Occasional associative reflection: with configured probability, pull
+        the dreams most similar to the current thought process and surface them
+        as the assistant's own remembered impressions."""
+        settings = get_settings()
+        if not settings.GIO_DREAM_RECALL_ENABLED or not self._recall_dreams or not user_embedding:
+            return None
+        if not self._rng() < settings.GIO_DREAM_RECALL_PROBABILITY:
+            return None
+
+        scored_dreams = self._recall_dreams(user_embedding)
+        if not scored_dreams:
+            return None
+
+        lines = [
+            "Recalled reflections from your Dream journal — your own past private thinking, not user messages.",
+            "They surfaced because they resemble the current topic. Draw on them only when they genuinely help; never quote them verbatim or present them as something the user said.",
+        ]
+        for _, dream in scored_dreams:
+            date = (dream.updated_at or dream.created_at or "")[:10]
+            lines.append(f"- [{date}] {dream.title}: {truncate_content(dream.content, limit=300)}")
+        return "\n".join(lines)
