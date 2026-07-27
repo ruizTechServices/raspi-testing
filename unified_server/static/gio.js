@@ -157,14 +157,15 @@ async function loadModels() {
   }
 }
 
-async function loadConversations() {
+async function loadConversations(options = {}) {
+  const { loadActiveMessages = true } = options;
   const data = await apiFetch('/api/gio/conversations');
   conversations = data.conversations;
   syncCurrentConversationId();
   renderConversationList();
-  if (currentConversationId) {
+  if (loadActiveMessages && currentConversationId) {
     await loadMessages(currentConversationId);
-  } else {
+  } else if (!currentConversationId) {
     transcriptEl.innerHTML = '<div class="empty-state">No chats yet.</div>';
     chatMetaEl.textContent = 'Persistent Supabase-backed chat.';
   }
@@ -291,6 +292,7 @@ function renderMessageCard(message) {
   const thinkingBlock = message.thinking_content
     ? `<details class="gio-thinking"><summary>Thinking</summary><pre>${escapeHtml(message.thinking_content)}</pre></details>`
     : '';
+  const toolingBlock = renderToolingBlock(message.tooling);
   const modelLabel = message.model ? escapeHtml(message.model) : '';
   const responseLabel = modelLabel;
   const footerMeta = responseLabel
@@ -300,6 +302,7 @@ function renderMessageCard(message) {
     <div class="message-card">
       <div class="message-role">${escapeHtml(message.role)}</div>
       <div class="message-content">${escapeHtml(message.content)}</div>
+      ${toolingBlock}
       ${thinkingBlock}
       <div class="message-footer">
         <div class="message-time">${escapeHtml(formatTime(message.created_at))}</div>
@@ -318,6 +321,7 @@ function createPendingAssistantCard(model) {
     <div class="message-card">
       <div class="message-role">assistant</div>
       <div class="message-content" data-role="content"></div>
+      <div class="message-tooling" data-role="tooling"></div>
       <div class="message-footer">
         <div class="message-time">Streaming...</div>
         <div class="message-model">${escapeHtml(responseLabel)}</div>
@@ -329,8 +333,33 @@ function createPendingAssistantCard(model) {
   return {
     card,
     contentEl: card.querySelector('[data-role="content"]'),
+    toolingEl: card.querySelector('[data-role="tooling"]'),
     timeEl: card.querySelector('.message-time'),
   };
+}
+
+function renderToolingBlock(tooling) {
+  const sources = tooling?.sources || [];
+  const plan = tooling?.plan || null;
+  if (!sources.length && !(plan?.use_rag || plan?.use_web)) {
+    return '';
+  }
+  const badges = [];
+  if (plan?.use_rag) badges.push('RAG');
+  if (plan?.use_web) badges.push('WEB');
+  const badgeText = badges.length ? `<div class="message-tooling-summary">Tools: ${escapeHtml(badges.join(', '))}</div>` : '';
+  const sourceItems = sources.map((source) => {
+    const label = source.label || '';
+    const sourceName = source.source || source.title || 'source';
+    return `<li>${escapeHtml(label)} ${escapeHtml(sourceName)}</li>`;
+  }).join('');
+  const sourceList = sourceItems ? `<details class="gio-thinking"><summary>Sources used (${sources.length})</summary><ul>${sourceItems}</ul></details>` : '';
+  return `<div class="message-tooling">${badgeText}${sourceList}</div>`;
+}
+
+function applyToolingToPendingCard(pending, tooling) {
+  if (!pending?.toolingEl) return;
+  pending.toolingEl.innerHTML = renderToolingBlock(tooling);
 }
 
 function stopStreaming() {
@@ -365,6 +394,7 @@ async function sendMessage() {
   let finalConversationId = currentConversationId;
   let buffer = '';
   let sawDone = false;
+  let finalDoneEvent = null;
 
   try {
     currentStreamController = new AbortController();
@@ -408,6 +438,7 @@ async function sendMessage() {
         const event = JSON.parse(line);
         if (event.type === 'meta') {
           finalConversationId = event.conversation_id || finalConversationId;
+          applyToolingToPendingCard(pending, event.tooling);
           if (finalConversationId && finalConversationId !== currentConversationId) {
             currentConversationId = finalConversationId;
             persistCurrentConversationId();
@@ -418,7 +449,9 @@ async function sendMessage() {
           transcriptEl.scrollTop = transcriptEl.scrollHeight;
         } else if (event.type === 'done') {
           sawDone = true;
+          finalDoneEvent = event;
           finalConversationId = event.conversation_id || finalConversationId;
+          applyToolingToPendingCard(pending, event.tooling);
           pending.timeEl.textContent = 'Finalizing...';
           pending.card.classList.remove('is-streaming');
         } else if (event.type === 'error') {
@@ -431,6 +464,7 @@ async function sendMessage() {
       const event = JSON.parse(buffer);
       if (event.type === 'done') {
         sawDone = true;
+        finalDoneEvent = event;
         finalConversationId = event.conversation_id || finalConversationId;
       } else if (event.type === 'error') {
         throw new Error(event.error || 'Streaming request failed');
@@ -441,9 +475,14 @@ async function sendMessage() {
       throw new Error('Stream ended before completion');
     }
 
+    if (finalDoneEvent?.message) {
+      pending.contentEl.textContent = finalDoneEvent.message.content || pending.contentEl.textContent;
+      pending.timeEl.textContent = formatTime(finalDoneEvent.message.created_at) || 'Done';
+    } else {
+      pending.timeEl.textContent = 'Done';
+    }
     messageInputEl.value = '';
-    await loadConversations();
-    await loadMessages(finalConversationId || currentConversationId);
+    await loadConversations({ loadActiveMessages: false });
     setStatus('Done');
   } catch (error) {
     pending.card.classList.remove('is-streaming');

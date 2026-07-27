@@ -19,7 +19,7 @@ layering, and how to add features.
 | `/` | **Razzy Command Center** — system overview (Pi temperature, LLM status, service health), Ollama start/stop buttons, recent Gio chats, and the **World Snapshot** widgets (weather, public IP, crypto, currency converter, NASA picture of the day). |
 | `/console` | Developer testing console for the local multi-provider chat API. |
 | `/razzy` | Razzy status view: Pi temperature + LLM connection cards with Ollama controls. (Chatbot removed from this page.) |
-| `/gio` | Gio — Supabase-backed ChatGPT-style assistant with streaming, semantic recall, and rolling summaries. |
+| `/gio` | Gio — Supabase-backed ChatGPT-style assistant with streaming, semantic recall, rolling summaries, optional RAG over ingested project knowledge, and optional web search for fresh facts. |
 | `/gio/dreams` | Dream Mode browser — reflection entries generated from Gio conversations. |
 
 ## API routes
@@ -54,8 +54,8 @@ Auth: routes marked 🔑 require the `X-API-Key` header (matched against
 | `GET /api/gio/conversations` 🔑 | List conversations. |
 | `GET /api/gio/conversations/<id>/messages` 🔑 | Messages (hidden summary rows filtered out). |
 | `PATCH /api/gio/conversations/<id>` 🔑 / `DELETE ...` 🔑 | Rename / delete. |
-| `POST /api/gio/chat` 🔑 | One turn (embeddings + recall + rolling summary). |
-| `POST /api/gio/chat/stream` 🔑 | NDJSON stream: `meta` → `delta`* → `done` (or `error`). |
+| `POST /api/gio/chat` 🔑 | One turn (embeddings + recall + rolling summary + optional tool context). |
+| `POST /api/gio/chat/stream` 🔑 | NDJSON stream: `meta` → `delta`* → `done` (or `error`). `meta`/`done` now include tool-planning metadata when RAG or web search ran. |
 | `GET /api/gio/dreams` 🔑, `GET /api/gio/dreams/<id>` 🔑 | List / fetch dream entries. |
 | `POST /api/gio/conversations/<id>/dream` 🔑 | Generate a dream entry. |
 
@@ -122,10 +122,31 @@ Highlights:
 - `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `OLLAMA_BASE_URL`, `OLLAMA_MODEL`.
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `GIO_*` — Gio storage and
   memory tuning (see `supabase_gio_schema.sql` for the schema).
+- `GIO_TOOLS_ENABLED`, `GIO_KNOWLEDGE_*` — enable server-side tool orchestration
+  and RAG over ingested knowledge chunks stored in Supabase pgvector.
+- `GIO_WEB_SEARCH_*`, `TAVILY_API_KEY` or `SERPER_API_KEY` — enable optional
+  live web search for current/fresh information.
 - `GIO_DREAM_RECALL_*` — occasional associative reflection during Gio chat:
   with probability `GIO_DREAM_RECALL_PROBABILITY` (default 0.25) the
   `GIO_DREAM_RECALL_TOP_K` (default 5) dreams most similar to the current
   message are recalled into context as Gio's own past reflections.
+- `OPENAI_EMBEDDING_MODEL` is used both for Gio conversation memory and for
+  external knowledge ingestion/search.
+
+## Knowledge ingestion
+
+After applying the updated `supabase_gio_schema.sql`, ingest files into Gio's
+knowledge store with:
+
+```bash
+cd "/home/giosterr44/Documents/ruizTechServices/project/python/server/fucking Around/fuck-around-1"
+.venv/bin/python scripts/ingest_gio_knowledge.py README.md docs unified_server --tag project
+```
+
+This stores chunked text plus embeddings in Supabase. Gio will then use those
+retrieved snippets when the prompt suggests repo/docs knowledge is relevant.
+Web search remains server-side and optional, keyed off `GIO_WEB_SEARCH_PROVIDER`
+plus either `TAVILY_API_KEY` or `SERPER_API_KEY`.
 - `TWITTER_*` — OAuth 1.0a credentials for X.
 - `NASA_API_KEY`, `WEATHER_LATITUDE`/`WEATHER_LONGITUDE`/`WEATHER_LOCATION_NAME`,
   `CRYPTO_COINS`, `CURRENCY_DEFAULT_BASE` — World Snapshot widgets.

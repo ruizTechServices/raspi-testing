@@ -41,6 +41,28 @@ create table if not exists public.gio_dream_entries (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.gio_knowledge_documents (
+  id uuid primary key,
+  source_key text not null unique,
+  title text not null,
+  url text,
+  tags jsonb not null default '[]'::jsonb,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.gio_knowledge_chunks (
+  id uuid primary key,
+  document_id uuid not null references public.gio_knowledge_documents(id) on delete cascade,
+  chunk_index integer not null,
+  content text not null,
+  token_count integer not null default 0,
+  embedding vector(1536),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create index if not exists gio_conversations_updated_at_idx
   on public.gio_conversations(updated_at desc);
 
@@ -52,6 +74,51 @@ create index if not exists gio_conversation_summaries_conversation_id_idx
 
 create index if not exists gio_dream_entries_conversation_id_idx
   on public.gio_dream_entries(conversation_id, updated_at desc);
+
+create index if not exists gio_knowledge_documents_source_key_idx
+  on public.gio_knowledge_documents(source_key);
+
+create index if not exists gio_knowledge_chunks_document_id_idx
+  on public.gio_knowledge_chunks(document_id, chunk_index);
+
+create index if not exists gio_knowledge_chunks_embedding_idx
+  on public.gio_knowledge_chunks
+  using ivfflat (embedding vector_cosine_ops)
+  with (lists = 100);
+
+create or replace function public.match_gio_knowledge_chunks(
+  query_embedding_text text,
+  match_count integer default 5,
+  min_score double precision default 0.2
+)
+returns table (
+  chunk_id uuid,
+  document_id uuid,
+  source_key text,
+  title text,
+  url text,
+  tags jsonb,
+  content text,
+  score double precision
+)
+language sql
+as $$
+  select
+    chunks.id as chunk_id,
+    docs.id as document_id,
+    docs.source_key,
+    docs.title,
+    docs.url,
+    docs.tags,
+    chunks.content,
+    1 - (chunks.embedding <=> query_embedding_text::vector) as score
+  from public.gio_knowledge_chunks as chunks
+  join public.gio_knowledge_documents as docs on docs.id = chunks.document_id
+  where chunks.embedding is not null
+    and 1 - (chunks.embedding <=> query_embedding_text::vector) >= min_score
+  order by chunks.embedding <=> query_embedding_text::vector
+  limit greatest(match_count, 1);
+$$;
 
 -- Backfill the newest legacy hidden summary message for each conversation into the
 -- dedicated summary table. Keep the old hidden rows for backward compatibility.

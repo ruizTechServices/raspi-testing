@@ -149,6 +149,26 @@
   padding-top: 8px;
 }
 
+.message-tooling {
+  margin-top: 10px;
+}
+
+.message-tooling-summary {
+  color: #9da7b3;
+  font-size: 12px;
+}
+
+.message-tooling ul {
+  margin: 8px 0 0 18px;
+  padding: 0;
+}
+
+.message-tooling li {
+  margin: 4px 0;
+  color: #c9d1d9;
+  font-size: 13px;
+}
+
 .message-footer {
   margin-top: 8px;
   display: flex;

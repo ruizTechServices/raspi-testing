@@ -56,6 +56,18 @@ class GioDream:
     updated_at: str
 
 
+@dataclass(slots=True)
+class GioKnowledgeDocument:
+    id: str
+    source_key: str
+    title: str
+    url: str | None
+    tags: list[str]
+    metadata: dict[str, Any]
+    created_at: str
+    updated_at: str
+
+
 class GioSupabaseRepository:
     def __init__(self, client: SupabaseRestClient | None = None) -> None:
         self.client = client or SupabaseRestClient()
@@ -64,8 +76,11 @@ class GioSupabaseRepository:
         self.messages_table = settings.GIO_MESSAGES_TABLE
         self.summaries_table = settings.GIO_SUMMARIES_TABLE
         self.dreams_table = settings.GIO_DREAMS_TABLE
+        self.knowledge_documents_table = settings.GIO_KNOWLEDGE_DOCUMENTS_TABLE
+        self.knowledge_chunks_table = settings.GIO_KNOWLEDGE_CHUNKS_TABLE
         self._summary_table_available: bool | None = None
         self._dream_table_available: bool | None = None
+        self._knowledge_tables_available: bool | None = None
 
     def ensure_schema(self) -> None:
         try:
@@ -79,6 +94,7 @@ class GioSupabaseRepository:
             )
             self._summary_table_available = self._detect_summary_table()
             self._dream_table_available = self._detect_dream_table()
+            self._knowledge_tables_available = self._detect_knowledge_tables()
         except SupabaseRequestError as exc:
             raise RuntimeError(
                 "Supabase schema is missing. Create tables `gio_conversations` and `gio_messages` in the Supabase SQL Editor first."
@@ -328,6 +344,130 @@ class GioSupabaseRepository:
         messages = self.get_messages(conversation_id)
         return [{"role": item.role, "content": item.content} for item in messages if item.role in {"user", "assistant", "system"}]
 
+    def upsert_knowledge_document(
+        self,
+        *,
+        source_key: str,
+        title: str,
+        url: str | None = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        if not self._knowledge_storage_available():
+            raise RuntimeError(
+                "Knowledge storage is missing. Apply the Supabase schema for gio_knowledge_documents and gio_knowledge_chunks first."
+            )
+        existing = self.client.select(
+            self.knowledge_documents_table,
+            query={
+                "select": "id,source_key,title,url,tags,metadata,created_at,updated_at",
+                "source_key": f"eq.{source_key}",
+                "limit": "1",
+            },
+        )
+        now = self._utc_now()
+        payload = {
+            "source_key": source_key,
+            "title": title,
+            "url": url,
+            "tags": tags or [],
+            "metadata": metadata or {},
+            "updated_at": now,
+        }
+        if existing:
+            rows = self.client.update(
+                self.knowledge_documents_table,
+                payload,
+                query={"id": f"eq.{existing[0]['id']}"},
+            )
+            return rows[0]
+        rows = self.client.insert(
+            self.knowledge_documents_table,
+            {"id": str(uuid4()), "created_at": now, **payload},
+        )
+        return rows[0]
+
+    def replace_knowledge_chunks(self, *, document_id: str, chunks: list[dict[str, Any]]) -> None:
+        if not self._knowledge_storage_available():
+            raise RuntimeError(
+                "Knowledge storage is missing. Apply the Supabase schema for gio_knowledge_documents and gio_knowledge_chunks first."
+            )
+        self.client.delete(
+            self.knowledge_chunks_table,
+            query={"document_id": f"eq.{document_id}"},
+            returning="minimal",
+        )
+        if not chunks:
+            return
+        now = self._utc_now()
+        payload = [
+            {
+                "id": str(uuid4()),
+                "document_id": document_id,
+                "chunk_index": item["chunk_index"],
+                "content": item["content"],
+                "token_count": item.get("token_count", 0),
+                "embedding": item.get("embedding"),
+                "created_at": now,
+                "updated_at": now,
+            }
+            for item in chunks
+        ]
+        self.client.insert(self.knowledge_chunks_table, payload, returning="minimal")
+
+    def search_knowledge_chunks(
+        self,
+        query_embedding: list[float],
+        *,
+        top_k: int,
+        min_score: float,
+    ) -> list[dict[str, Any]]:
+        if not query_embedding or not self._knowledge_storage_available():
+            return []
+        try:
+            result = self.client.rpc(
+                "match_gio_knowledge_chunks",
+                {
+                    "query_embedding_text": self._embedding_to_vector_literal(query_embedding),
+                    "match_count": top_k,
+                    "min_score": min_score,
+                },
+            )
+            return result if isinstance(result, list) else []
+        except SupabaseRequestError:
+            return []
+
+    def list_knowledge_documents(self, *, limit: int = 500) -> list[dict[str, Any]]:
+        if not self._knowledge_storage_available():
+            return []
+        try:
+            return self.client.select(
+                self.knowledge_documents_table,
+                query={
+                    "select": "id,source_key,title,url,tags,metadata,created_at,updated_at",
+                    "order": "updated_at.desc",
+                    "limit": str(limit),
+                },
+            )
+        except SupabaseRequestError:
+            return []
+
+    def get_knowledge_chunks_for_document(self, document_id: str, *, limit: int = 3) -> list[dict[str, Any]]:
+        if not self._knowledge_storage_available():
+            return []
+        try:
+            return self.client.select(
+                self.knowledge_chunks_table,
+                query={
+                    "select": "id,document_id,chunk_index,content,token_count,created_at,updated_at",
+                    "document_id": f"eq.{document_id}",
+                    "order": "chunk_index.asc",
+                    "limit": str(limit),
+                },
+            )
+        except SupabaseRequestError:
+            return []
+
     def _summary_storage_available(self) -> bool:
         if self._summary_table_available is None:
             self._summary_table_available = self._detect_summary_table()
@@ -352,6 +492,25 @@ class GioSupabaseRepository:
         try:
             self.client.select(
                 self.dreams_table,
+                query={"select": "id", "limit": "1"},
+            )
+            return True
+        except SupabaseRequestError:
+            return False
+
+    def _knowledge_storage_available(self) -> bool:
+        if self._knowledge_tables_available is None:
+            self._knowledge_tables_available = self._detect_knowledge_tables()
+        return self._knowledge_tables_available
+
+    def _detect_knowledge_tables(self) -> bool:
+        try:
+            self.client.select(
+                self.knowledge_documents_table,
+                query={"select": "id", "limit": "1"},
+            )
+            self.client.select(
+                self.knowledge_chunks_table,
                 query={"select": "id", "limit": "1"},
             )
             return True
@@ -469,6 +628,10 @@ class GioSupabaseRepository:
             except Exception:
                 return []
         return []
+
+    @staticmethod
+    def _embedding_to_vector_literal(values: list[float]) -> str:
+        return "[" + ",".join(f"{float(value):.12g}" for value in values) + "]"
 
     @staticmethod
     def _utc_now() -> str:

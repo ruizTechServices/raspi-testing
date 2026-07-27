@@ -68,6 +68,8 @@ class Settings:
     GIO_MESSAGES_TABLE: str = "gio_messages"
     GIO_SUMMARIES_TABLE: str = "gio_conversation_summaries"
     GIO_DREAMS_TABLE: str = "gio_dream_entries"
+    GIO_KNOWLEDGE_DOCUMENTS_TABLE: str = "gio_knowledge_documents"
+    GIO_KNOWLEDGE_CHUNKS_TABLE: str = "gio_knowledge_chunks"
     OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
     GIO_RECENT_MESSAGES_LIMIT: int = 12
     GIO_RECALL_TOP_K: int = 5
@@ -80,6 +82,16 @@ class Settings:
     GIO_DREAM_RECALL_TOP_K: int = 5
     GIO_DREAM_RECALL_MIN_SCORE: float = 0.25
     GIO_DREAM_RECALL_PROBABILITY: float = 0.25
+    GIO_TOOLS_ENABLED: bool = True
+    GIO_KNOWLEDGE_ENABLED: bool = True
+    GIO_KNOWLEDGE_TOP_K: int = 5
+    GIO_KNOWLEDGE_MIN_SCORE: float = 0.2
+    GIO_WEB_SEARCH_ENABLED: bool = True
+    GIO_WEB_SEARCH_PROVIDER: str = "tavily"
+    GIO_WEB_SEARCH_MAX_RESULTS: int = 5
+    GIO_WEB_SEARCH_TIMEOUT_SECONDS: int = 20
+    TAVILY_API_KEY: str = ""
+    SERPER_API_KEY: str = ""
 
     # Local memory cells
     ENABLE_MEMORY: bool = True
@@ -136,6 +148,8 @@ class Settings:
             GIO_MESSAGES_TABLE=os.getenv("GIO_MESSAGES_TABLE", "gio_messages"),
             GIO_SUMMARIES_TABLE=os.getenv("GIO_SUMMARIES_TABLE", "gio_conversation_summaries"),
             GIO_DREAMS_TABLE=os.getenv("GIO_DREAMS_TABLE", "gio_dream_entries"),
+            GIO_KNOWLEDGE_DOCUMENTS_TABLE=os.getenv("GIO_KNOWLEDGE_DOCUMENTS_TABLE", "gio_knowledge_documents"),
+            GIO_KNOWLEDGE_CHUNKS_TABLE=os.getenv("GIO_KNOWLEDGE_CHUNKS_TABLE", "gio_knowledge_chunks"),
             OPENAI_EMBEDDING_MODEL=os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small"),
             GIO_RECENT_MESSAGES_LIMIT=int(os.getenv("GIO_RECENT_MESSAGES_LIMIT", "12")),
             GIO_RECALL_TOP_K=int(os.getenv("GIO_RECALL_TOP_K", "5")),
@@ -148,6 +162,16 @@ class Settings:
             GIO_DREAM_RECALL_TOP_K=int(os.getenv("GIO_DREAM_RECALL_TOP_K", "5")),
             GIO_DREAM_RECALL_MIN_SCORE=float(os.getenv("GIO_DREAM_RECALL_MIN_SCORE", "0.25")),
             GIO_DREAM_RECALL_PROBABILITY=float(os.getenv("GIO_DREAM_RECALL_PROBABILITY", "0.25")),
+            GIO_TOOLS_ENABLED=_env_bool("GIO_TOOLS_ENABLED", "true"),
+            GIO_KNOWLEDGE_ENABLED=_env_bool("GIO_KNOWLEDGE_ENABLED", "true"),
+            GIO_KNOWLEDGE_TOP_K=int(os.getenv("GIO_KNOWLEDGE_TOP_K", "5")),
+            GIO_KNOWLEDGE_MIN_SCORE=float(os.getenv("GIO_KNOWLEDGE_MIN_SCORE", "0.2")),
+            GIO_WEB_SEARCH_ENABLED=_env_bool("GIO_WEB_SEARCH_ENABLED", "true"),
+            GIO_WEB_SEARCH_PROVIDER=os.getenv("GIO_WEB_SEARCH_PROVIDER", "tavily"),
+            GIO_WEB_SEARCH_MAX_RESULTS=int(os.getenv("GIO_WEB_SEARCH_MAX_RESULTS", "5")),
+            GIO_WEB_SEARCH_TIMEOUT_SECONDS=int(os.getenv("GIO_WEB_SEARCH_TIMEOUT_SECONDS", "20")),
+            TAVILY_API_KEY=os.getenv("TAVILY_API_KEY", ""),
+            SERPER_API_KEY=os.getenv("SERPER_API_KEY", ""),
             ENABLE_MEMORY=_env_bool("ENABLE_MEMORY", "true"),
             MEMORY_TOP_K=int(os.getenv("MEMORY_TOP_K", "5")),
             NASA_API_KEY=os.getenv("NASA_API_KEY", "DEMO_KEY"),

@@ -10,7 +10,10 @@ from unified_server.gio.catalog import ModelCatalog, is_supported_gio_model, sup
 from unified_server.gio.chat import CONVERSATION_NOT_FOUND, GioChatOrchestrator, extract_reasoning_from_response
 from unified_server.gio.dreams import DreamGenerator
 from unified_server.gio.embeddings import EmbeddingService
+from unified_server.gio.knowledge import GioKnowledgeService
 from unified_server.gio.repository import GioMessage, GioSupabaseRepository
+from unified_server.gio.tooling import GioToolRouter
+from unified_server.gio.web_search import WebSearchService
 from unified_server.gio.serialization import serialize_dream, serialize_message
 from unified_server.gio.summaries import SummaryMaintainer
 from unified_server.providers import ProviderRegistry
@@ -39,6 +42,9 @@ class GioService:
 
         self._embeddings = EmbeddingService(get_client)
         self._catalog = ModelCatalog(get_client)
+        self._knowledge = GioKnowledgeService(self.repository)
+        self._web_search = WebSearchService()
+        self._tool_router = GioToolRouter()
         self._summaries = SummaryMaintainer(
             self.repository,
             get_client,
@@ -60,6 +66,9 @@ class GioService:
             embed=embed,
             on_assistant_stored=lambda conversation_id: self._maybe_update_rolling_summary(conversation_id),
             recall_dreams=lambda query_embedding: self._recall_similar_dreams(query_embedding),
+            knowledge_search=lambda query, query_embedding: self._knowledge.search(query, query_embedding),
+            web_search=lambda query: self._web_search.search(query),
+            tool_router=self._tool_router,
         )
 
     # -- schema / conversations -------------------------------------------------
