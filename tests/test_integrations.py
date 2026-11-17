@@ -143,24 +143,161 @@ def test_currency_convert_rejects_bad_params(query):
     assert response.status_code == 400
 
 
+class ScriptedApodHttp:
+    """Serves a canned APOD feed; ``feed=None`` behaves like NASA being down."""
+
+    def __init__(self, feed):
+        self.feed = feed
+        self.calls = 0
+
+    def get_text(self, url, params=None):
+        self.calls += 1
+        if self.feed is None:
+            raise IntegrationError("Upstream API timed out.")
+        return self.feed
+
+
+class FakeClock:
+    def __init__(self, year, month, day, hour=12):
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+
+        self.now = datetime(year, month, day, hour, tzinfo=ZoneInfo("America/New_York")).timestamp()
+
+    def __call__(self):
+        return self.now
+
+
+def apod_feed(*items):
+    """items: (title, 'DD Mon YYYY' publication day, media url)."""
+    entries = "".join(
+        f"""<item>
+          <title>{title}</title>
+          <link>https://science.nasa.gov/image-article/{title.lower().replace(' ', '-')}/</link>
+          <pubDate>{day} 05:05:00 +0000</pubDate>
+          <apod:hdurl>{media}</apod:hdurl>
+          <apod:copyright><![CDATA[<a href="https://example.com">Some Astronomer</a>; <br>Processing: <a href="#">A. Person</a>]]></apod:copyright>
+          <apod:explanation><![CDATA[<strong>Explanation:</strong> A dark <a href="#">nebula</a> in Orion.]]></apod:explanation>
+        </item>"""
+        for title, day, media in items
+    )
+    return (
+        '<?xml version="1.0" encoding="UTF-8" ?><rss version="2.0" '
+        'xmlns:apod="https://science.nasa.gov/apod/"><channel><title>APOD Basic</title>'
+        f"{entries}</channel></rss>"
+    )
+
+
+HORSEHEAD = "https://assets.science.nasa.gov/a/horsehead.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg"
+
+
 def test_apod_endpoint():
-    payload = {
-        "title": "The Horsehead Nebula",
-        "date": "2026-07-09",
-        "explanation": "A dark nebula in Orion.",
-        "media_type": "image",
-        "url": "https://apod.nasa.gov/apod/image/horsehead.jpg",
-        "hdurl": "https://apod.nasa.gov/apod/image/horsehead_hd.jpg",
-        "copyright": " Some Astronomer ",
-    }
-    client = build_client(apod=ApodClient(http=http_with(payload)))
+    feed = apod_feed(
+        ("Older Picture", "08 Jul 2026", "https://assets.science.nasa.gov/a/older.jpg"),
+        ("The Horsehead Nebula", "09 Jul 2026", HORSEHEAD),
+    )
+    client = build_client(apod=ApodClient(http=ScriptedApodHttp(feed), clock=FakeClock(2026, 7, 9)))
 
     response = client.get("/api/integrations/apod")
 
     assert response.status_code == 200
     body = response.get_json()
-    assert body["title"] == "The Horsehead Nebula"
-    assert body["copyright"] == "Some Astronomer"
+    assert body["title"] == "The Horsehead Nebula"  # newest item wins, whatever the order
+    assert body["date"] == "2026-07-09"
+    assert body["media_type"] == "image"
+    assert body["url"] == HORSEHEAD
+    assert body["hd_url"] == "https://assets.science.nasa.gov/a/horsehead.jpg"
+    assert body["copyright"] == "Some Astronomer; Processing: A. Person"
+    assert body["explanation"] == "A dark nebula in Orion."
+    assert body["stale"] is False
+
+
+def test_apod_video_day_links_to_the_nasa_page_instead_of_an_image():
+    feed = apod_feed(("A Video Day", "09 Jul 2026", "https://www.youtube.com/embed/abc123"))
+    apod = ApodClient(http=ScriptedApodHttp(feed), clock=FakeClock(2026, 7, 9))
+
+    body = apod.picture_of_the_day()
+
+    assert body["media_type"] == "video"
+    assert body["url"] == "https://science.nasa.gov/image-article/a-video-day/"
+    assert body["hd_url"] is None and body["thumbnail_url"] is None
+
+
+def test_apod_does_not_refetch_once_it_has_todays_picture():
+    http = ScriptedApodHttp(apod_feed(("Today", "10 Jul 2026", HORSEHEAD)))
+    apod = ApodClient(http=http, clock=FakeClock(2026, 7, 10))
+
+    apod.picture_of_the_day()
+    apod.picture_of_the_day()
+
+    assert http.calls == 1
+
+
+def test_apod_shows_yesterday_until_today_is_published_then_picks_it_up():
+    http = ScriptedApodHttp(apod_feed(("Yesterday", "09 Jul 2026", HORSEHEAD)))
+    clock = FakeClock(2026, 7, 10, hour=0)
+    apod = ApodClient(http=http, clock=clock)
+
+    body = apod.picture_of_the_day()
+    apod.picture_of_the_day()
+
+    assert body["title"] == "Yesterday" and body["stale"] is False
+    assert http.calls == 1  # the second load waits out the backoff
+
+    http.feed = apod_feed(("Yesterday", "09 Jul 2026", HORSEHEAD), ("Today", "10 Jul 2026", HORSEHEAD))
+    clock.now += 16 * 60
+    assert apod.picture_of_the_day()["title"] == "Today"
+
+
+def test_apod_serves_last_good_picture_from_disk_while_nasa_is_down(tmp_path):
+    cache_path = tmp_path / "apod_last_good.json"
+    working = ScriptedApodHttp(apod_feed(("Saved", "08 Jul 2026", HORSEHEAD)))
+    ApodClient(http=working, cache_path=cache_path, clock=FakeClock(2026, 7, 8)).picture_of_the_day()
+
+    down = ScriptedApodHttp(None)
+    restarted = ApodClient(http=down, cache_path=cache_path, clock=FakeClock(2026, 7, 10))
+    client = build_client(apod=restarted)
+
+    response = client.get("/api/integrations/apod")
+    client.get("/api/integrations/apod")
+
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["title"] == "Saved" and body["stale"] is True
+    assert down.calls == 1  # no hammering during the backoff
+
+
+def test_apod_endpoint_returns_503_when_nasa_is_down_and_nothing_is_saved():
+    client = build_client(apod=ApodClient(http=ScriptedApodHttp(None), clock=FakeClock(2026, 7, 10)))
+
+    response = client.get("/api/integrations/apod")
+
+    assert response.status_code == 503
+    assert "timed out" in response.get_json()["error"]
+
+
+def test_apod_rejects_a_feed_that_is_not_xml():
+    apod = ApodClient(http=ScriptedApodHttp("<html>maintenance"), clock=FakeClock(2026, 7, 10))
+
+    with pytest.raises(IntegrationError):
+        apod.picture_of_the_day()
+
+
+def test_cached_http_client_get_text_is_cached():
+    class TextSession:
+        calls = 0
+
+        def get(self, url, params=None, timeout=None):
+            TextSession.calls += 1
+            response = FakeResponse({})
+            response.text = "<rss/>"
+            return response
+
+    http = CachedHttpClient(ttl_seconds=60, session=TextSession())
+
+    assert http.get_text("https://example.com/feed") == "<rss/>"
+    assert http.get_text("https://example.com/feed") == "<rss/>"
+    assert TextSession.calls == 1
 
 
 def test_cached_http_client_caches_within_ttl():

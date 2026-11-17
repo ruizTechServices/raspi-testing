@@ -33,7 +33,14 @@ class CachedHttpClient:
         self._cache: dict[tuple, tuple[float, Any]] = {}
 
     def get_json(self, url: str, params: dict[str, Any] | None = None) -> Any:
-        key = (url, tuple(sorted((params or {}).items())))
+        return self._get(url, params, "json")
+
+    def get_text(self, url: str, params: dict[str, Any] | None = None) -> str:
+        """Same caching and error handling as get_json, for XML/HTML feeds."""
+        return self._get(url, params, "text")
+
+    def _get(self, url: str, params: dict[str, Any] | None, kind: str) -> Any:
+        key = (kind, url, tuple(sorted((params or {}).items())))
         now = self._clock()
         hit = self._cache.get(key)
         if hit and now - hit[0] < self._ttl_seconds:
@@ -42,7 +49,7 @@ class CachedHttpClient:
         try:
             response = self._session.get(url, params=params, timeout=self._timeout_seconds)
             response.raise_for_status()
-            data = response.json()
+            data = response.json() if kind == "json" else response.text
         except requests.exceptions.Timeout as exc:
             raise IntegrationError("Upstream API timed out.") from exc
         except requests.exceptions.ConnectionError as exc:

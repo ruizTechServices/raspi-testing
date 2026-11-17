@@ -8,7 +8,7 @@ from unified_server.integrations.currency import CurrencyClient
 from unified_server.integrations.http import IntegrationError
 from unified_server.integrations.network import PublicIpClient
 from unified_server.integrations.weather import WeatherClient
-from unified_server.settings import get_settings
+from unified_server.settings import DATA_DIR, get_settings
 
 
 def build_integrations_blueprint(
@@ -29,7 +29,7 @@ def build_integrations_blueprint(
     network = network or PublicIpClient()
     crypto = crypto or CryptoPriceClient()
     currency = currency or CurrencyClient()
-    apod = apod or ApodClient()
+    apod = apod or ApodClient(cache_path=DATA_DIR / "apod_last_good.json")
 
     @bp.get("/api/integrations/weather")
     def integrations_weather():

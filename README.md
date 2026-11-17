@@ -79,7 +79,7 @@ Live posting is still gated by X-side API enrollment, not local code.
 | `GET /api/integrations/network/public-ip` | [ipify](https://www.ipify.org) — the Pi's public WAN IP. |
 | `GET /api/integrations/crypto/prices` | [CoinGecko](https://www.coingecko.com) — USD spot + 24h change for `CRYPTO_COINS`. |
 | `GET /api/integrations/currency/convert?amount&from&to` | [Frankfurter](https://frankfurter.dev) (ECB reference rates). |
-| `GET /api/integrations/apod` | [NASA APOD](https://api.nasa.gov) — works out of the box with `DEMO_KEY`. |
+| `GET /api/integrations/apod` | [NASA APOD](https://science.nasa.gov/apod/) — read from NASA's feed (`science.nasa.gov/feed/apod-basic/`), no key needed. Keeps the last good picture in `data/apod_last_good.json` and serves it when NASA is slow or down. The old `api.nasa.gov` endpoint returns placeholder data since NASA moved APOD in 2026, so `NASA_API_KEY` is no longer used. |
 
 Responses are cached server-side (2 min – 6 h per source) to stay polite to
 the free APIs. Upstream failures return `503` with a friendly JSON error (503 instead of 502 because Cloudflare replaces origin 502 bodies with its own error page, which would hide the message).
